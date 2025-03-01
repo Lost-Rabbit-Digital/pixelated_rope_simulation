@@ -140,15 +140,20 @@ func _on_end_node_mouse_exited() -> void:
 
 # Called every physics frame
 func _physics_process(delta: float) -> void:
-	if not _initialized or _broken:
+	if not _initialized:
 		return
 		
 	if _segments.is_empty():
 		return
 	
-	# Handle dragging of end node
+	# Handle dragging of end node - keep this active even when broken
 	if _is_dragging:
 		_end_node.global_position = get_global_mouse_position()
+	
+	# If rope is broken, just request redraw to update the red line
+	if _broken:
+		queue_redraw()
+		return
 		
 	# Update endpoints to match node positions
 	_segments[0].position = _start_node.global_position
@@ -232,22 +237,33 @@ func _check_rope_state() -> void:
 
 # Draw the rope using Bresenham's line algorithm for pixelation
 func _draw() -> void:
-	if _segments.is_empty() or _broken:
+	if _segments.is_empty():
 		return
 	
 	# Prepare local points array
 	var points: Array[Vector2] = []
-	for segment in _segments:
-		points.append(to_local(segment.position))
 	
-	# Select color based on state
-	var color: Color = rope_color
-	if _state == RopeState.STRETCHED:
-		color = Color.DARK_ORANGE
-	
-	# Draw pixelated rope segments
-	for i in range(len(points) - 1):
-		_draw_pixelated_line(points[i], points[i + 1], color)
+	# If rope is broken, just draw a red line between the anchors
+	if _broken:
+		# Make sure we're using the current positions of the anchors
+		var start_point = to_local(_start_node.global_position)
+		var end_point = to_local(_end_node.global_position)
+		
+		# Draw red line with the same pixel properties as the rope
+		_draw_pixelated_line(start_point, end_point, Color.RED)
+	else:
+		# Normal rope drawing
+		for segment in _segments:
+			points.append(to_local(segment.position))
+		
+		# Select color based on state
+		var color: Color = rope_color
+		if _state == RopeState.STRETCHED:
+			color = Color.DARK_ORANGE
+		
+		# Draw pixelated rope segments
+		for i in range(len(points) - 1):
+			_draw_pixelated_line(points[i], points[i + 1], color)
 
 # Bresenham's line algorithm implementation for pixelated drawing
 func _draw_pixelated_line(from: Vector2, to: Vector2, color: Color) -> void:
