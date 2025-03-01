@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://3xv28xdk5fcv"]
+
+[ext_resource type="PackedScene" uid="uid://dcoqat0sa0qs6" path="res://rope_node.tscn" id="1_0f027"]
+
+[node name="MainScene" type="Node2D"]
+
+[node name="RopeNode" parent="." instance=ExtResource("1_0f027")]
+position = Vector2(98, 78)
