@@ -27,6 +27,7 @@ func _ready() -> void:
 	
 	# Apply initial properties to rope
 	pixel_segment_slider.value = segment_length
+	pixel_color_picker.color = rope.rope_color
 	
 	# Get references to start and end nodes from the rope
 	# These are now part of the PixelRope scene
