@@ -60,42 +60,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="Menu/VBoxContainer"]
-layout_mode = 2
-
-[node name="RichTextLabel" type="RichTextLabel" parent="Menu/VBoxContainer/HBoxContainer3"]
-custom_minimum_size = Vector2(128, 32)
-layout_mode = 2
-size_flags_horizontal = 2
-text = "Enable Outline"
-fit_content = true
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="OutlineCheckbox" type="CheckBox" parent="Menu/VBoxContainer/HBoxContainer3"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(128, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HBoxContainer4" type="HBoxContainer" parent="Menu/VBoxContainer"]
-layout_mode = 2
-
-[node name="RichTextLabel" type="RichTextLabel" parent="Menu/VBoxContainer/HBoxContainer4"]
-custom_minimum_size = Vector2(128, 32)
-layout_mode = 2
-size_flags_horizontal = 2
-text = "Outline Color"
-fit_content = true
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="OutlineColorPicker" type="ColorPickerButton" parent="Menu/VBoxContainer/HBoxContainer4"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(128, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-
 [node name="HBoxContainer5" type="HBoxContainer" parent="Menu/VBoxContainer"]
 layout_mode = 2
 
@@ -123,6 +87,4 @@ pixel_size = 8
 
 [connection signal="value_changed" from="Menu/VBoxContainer/HBoxContainer/PixelSizeSlider" to="." method="_on_pixel_size_slider_value_changed"]
 [connection signal="value_changed" from="Menu/VBoxContainer/HBoxContainer2/PixelSegmentSlider" to="." method="_on_pixel_segment_slider_value_changed"]
-[connection signal="toggled" from="Menu/VBoxContainer/HBoxContainer3/OutlineCheckbox" to="." method="_on_outline_checkbox_toggled"]
-[connection signal="color_changed" from="Menu/VBoxContainer/HBoxContainer4/OutlineColorPicker" to="." method="_on_outline_color_picker_color_changed"]
 [connection signal="color_changed" from="Menu/VBoxContainer/HBoxContainer5/PixelColorPicker" to="." method="_on_pixel_color_picker_color_changed"]

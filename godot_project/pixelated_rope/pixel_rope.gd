@@ -16,13 +16,10 @@ enum RopeState {
 @export var segment_count: int = 20
 @export var segment_length: float = 5.0
 @export var rope_color: Color = Color(0.8, 0.6, 0.2)
-@export var outline_color: Color = Color(0.1, 0.1, 0.1)
-@export var use_outline: bool = true
 
 @export_group("Pixelation Properties")
 @export var pixel_size: int = 4
 @export var pixel_spacing: int = 0
-@export_enum("Square", "Circle", "Diamond") var pixel_shape: int = 0
 
 @export_group("Physics Properties")
 @export var gravity: Vector2 = Vector2(0, 980)
@@ -283,12 +280,8 @@ func _draw_pixelated_line(from: Vector2, to: Vector2, color: Color) -> void:
 	
 	# Draw pixels
 	for point in points:
-		# Draw outline if enabled
-		if use_outline:
-			_draw_pixel_shape(point, pixel_size + 2, outline_color)
-		
 		# Draw main pixel
-		_draw_pixel_shape(point, pixel_size, color)
+		_draw_pixel(point, pixel_size, color)
 
 # Implementation of Bresenham's line algorithm
 func _bresenham_line(from: Vector2, to: Vector2) -> Array[Vector2]:
@@ -333,21 +326,13 @@ func _bresenham_line(from: Vector2, to: Vector2) -> Array[Vector2]:
 	
 	return points
 
-# Draw a pixel in the specified shape
-func _draw_pixel_shape(pixel_position: Vector2, size: float, color: Color) -> void:
-	match pixel_shape:
-		0: # Square
-			draw_rect(Rect2(pixel_position - Vector2(size/2, size/2), Vector2(size, size)), color)
-		1: # Circle
-			draw_circle(pixel_position, size/2, color)
-		2: # Diamond
-			var points = PackedVector2Array([
-				pixel_position + Vector2(0, -size/2),
-				pixel_position + Vector2(size/2, 0),
-				pixel_position + Vector2(0, size/2),
-				pixel_position + Vector2(-size/2, 0)
-			])
-			draw_colored_polygon(points, color)
+# Draw a pixel in the specified position, size, and color
+func _draw_pixel(pixel_position: Vector2, size: float, color: Color) -> void:
+	# Draw a rectangle to mimick a pixel with the inputs:
+	# Position of the pixel, 
+	# size of the pixel, 
+	# and the color of the pixel
+	draw_rect(Rect2(pixel_position - Vector2(size/2, size/2), Vector2(size, size)), Color.RED)
 
 # Public methods
 func break_rope() -> void:

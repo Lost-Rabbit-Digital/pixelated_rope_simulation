@@ -6,9 +6,7 @@ extends Control
 # UI References
 @onready var pixel_size_slider = %PixelSizeSlider
 @onready var pixel_segment_slider = %PixelSegmentSlider
-@onready var outline_checkbox = %OutlineCheckbox
-@onready var outline_color_picker = %PixelColorPicker
-@onready var pixel_color_picker = %OutlineColorPicker
+@onready var pixel_color_picker = %PixelColorPicker
 
 # Rope properties
 @onready var rope_color: Color = rope.rope_color
@@ -28,7 +26,6 @@ func _ready() -> void:
 	print("Main scene: Setting up rope")
 	
 	# Apply initial properties to rope
-	outline_color_picker.color = rope.rope_color
 	pixel_segment_slider.value = segment_length
 	
 	# Get references to start and end nodes from the rope
@@ -117,22 +114,6 @@ func _connect_ui_controls() -> void:
 		# Initialize with current value
 		_on_pixel_segment_slider_value_changed(pixel_segment_slider.value)
 	
-	# Connect outline checkbox
-	if outline_checkbox:
-		if outline_checkbox.is_connected("toggled", _on_outline_checkbox_toggled):
-			outline_checkbox.disconnect("toggled", _on_outline_checkbox_toggled)
-		outline_checkbox.toggled.connect(_on_outline_checkbox_toggled)
-		# Initialize with current state
-		_on_outline_checkbox_toggled(outline_checkbox.button_pressed)
-	
-	# Connect outline color picker
-	if outline_color_picker:
-		if outline_color_picker.is_connected("color_changed", _on_outline_color_picker_color_changed):
-			outline_color_picker.disconnect("color_changed", _on_outline_color_picker_color_changed)
-		outline_color_picker.color_changed.connect(_on_outline_color_picker_color_changed)
-		# Initialize with current color
-		_on_outline_color_picker_color_changed(outline_color_picker.color)
-	
 	# Connect pixel color picker
 	if pixel_color_picker:
 		if pixel_color_picker.is_connected("color_changed", _on_pixel_color_picker_color_changed):
@@ -147,12 +128,6 @@ func _on_pixel_size_slider_value_changed(value: float) -> void:
 
 func _on_pixel_segment_slider_value_changed(value: float) -> void:
 	rope.segment_length = int(value)
-
-func _on_outline_checkbox_toggled(toggled_on: bool) -> void:
-	rope.use_outline = toggled_on
-
-func _on_outline_color_picker_color_changed(color: Color) -> void:
-	rope.outline_color = color
 
 func _on_pixel_color_picker_color_changed(color: Color) -> void:
 	rope.rope_color = color
