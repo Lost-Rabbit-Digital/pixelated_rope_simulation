@@ -9,8 +9,8 @@ extends Control
 @onready var pixel_color_picker = %PixelColorPicker
 
 # Rope properties
-@onready var rope_color: Color = rope.rope_color
-@onready var segment_length: int = rope.segment_length
+#@onready var rope_color: Color = rope.rope_color
+#@onready var segment_length: int = rope.segment_length
 
 # Variables to track dragging
 var _dragging_node: Node2D = null
@@ -26,8 +26,8 @@ func _ready() -> void:
 	print("Main scene: Setting up rope")
 	
 	# Apply initial properties to rope
-	pixel_segment_slider.value = segment_length
-	pixel_color_picker.color = rope.rope_color
+	#pixel_segment_slider.value = segment_length
+	#pixel_color_picker.color = rope.rope_color
 	
 	# Get references to start and end nodes from the rope
 	# These are now part of the PixelRope scene
