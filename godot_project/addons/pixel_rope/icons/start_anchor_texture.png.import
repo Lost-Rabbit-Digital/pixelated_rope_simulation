@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d4hedfhby0cvt"
-path="res://.godot/imported/end_anchor_texture.png-ec2e49c91838650a3faef3646208bcea.ctex"
+uid="uid://bl2obv6ieug3o"
+path="res://.godot/imported/start_anchor_texture.png-409f8595a6db4764d8f567a8de1a4379.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/end_anchor_texture.png"
-dest_files=["res://.godot/imported/end_anchor_texture.png-ec2e49c91838650a3faef3646208bcea.ctex"]
+source_file="res://addons/pixel_rope/icons/start_anchor_texture.png"
+dest_files=["res://.godot/imported/start_anchor_texture.png-409f8595a6db4764d8f567a8de1a4379.ctex"]
 
 [params]
 

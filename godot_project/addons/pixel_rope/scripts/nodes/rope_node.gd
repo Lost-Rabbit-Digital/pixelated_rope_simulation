@@ -1,3 +1,4 @@
+@tool
 class_name PixelRope
 extends Node2D
 
@@ -43,27 +44,38 @@ var _initialized: bool = false
 var _is_dragging: bool = false
 var _mouse_over_end: bool = false
 
+# Editor-specific variables
+var _editor_mode: bool = false
+
 # Called when the node enters the scene tree
 func _ready() -> void:
-	# Wait one frame to make sure all nodes are ready
-	await get_tree().process_frame
+	# Check if we're in the editor
+	_editor_mode = Engine.is_editor_hint()
 	
-	# Get the anchor nodes from children
-	_start_node = find_child(start_anchor_name, true)
-	_end_node = find_child(end_anchor_name, true)
-	
-	if not _start_node or not _end_node:
-		push_error("PixelRope: Could not find anchor nodes named '%s' and '%s'" % [start_anchor_name, end_anchor_name])
-		return
-	
-	print("PixelRope: Initializing rope between", _start_node.name, "and", _end_node.name)
-	
-	# Set up interaction for the end anchor
-	_setup_draggable_node(_end_node)
-	
-	# Initialize the rope
-	_initialize_rope()
-	_initialized = true
+	# Initialize in game mode only
+	if not _editor_mode:
+		# Wait one frame to make sure all nodes are ready
+		await get_tree().process_frame
+		
+		# Get the anchor nodes from children
+		_start_node = find_child(start_anchor_name, true)
+		_end_node = find_child(end_anchor_name, true)
+		
+		if not _start_node or not _end_node:
+			push_error("PixelRope: Could not find anchor nodes named '%s' and '%s'" % [start_anchor_name, end_anchor_name])
+			return
+		
+		print("PixelRope: Initializing rope between", _start_node.name, "and", _end_node.name)
+		
+		# Set up interaction for the end anchor
+		_setup_draggable_node(_end_node)
+		
+		# Initialize the rope
+		_initialize_rope()
+		_initialized = true
+	else:
+		# In editor mode, just make it visible
+		queue_redraw()
 
 # Set up a node to be draggable
 func _setup_draggable_node(node: Node2D) -> void:
@@ -120,6 +132,9 @@ func _initialize_rope() -> void:
 
 # Mouse handling for dragging
 func _input(event: InputEvent) -> void:
+	if _editor_mode:
+		return
+		
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			_is_dragging = event.pressed and _mouse_over_end
@@ -137,7 +152,7 @@ func _on_end_node_mouse_exited() -> void:
 
 # Called every physics frame
 func _physics_process(delta: float) -> void:
-	if not _initialized:
+	if _editor_mode or not _initialized:
 		return
 		
 	if _segments.is_empty():
@@ -234,6 +249,12 @@ func _check_rope_state() -> void:
 
 # Draw the rope using Bresenham's line algorithm for pixelation
 func _draw() -> void:
+	if _editor_mode:
+		# Draw a preview in the editor
+		var start = Vector2(-100, 0)
+		var end = Vector2(100, 0)
+		_draw_pixelated_line(start, end, rope_color)
+		return
 	
 	if _segments.is_empty():
 		return
@@ -348,3 +369,7 @@ func reset_rope() -> void:
 
 func get_state() -> int:
 	return _state
+
+# Editor methods
+func _get_tool_buttons() -> Array:
+	return []

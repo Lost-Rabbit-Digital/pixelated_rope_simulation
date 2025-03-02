@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://3xv28xdk5fcv"]
 
-[ext_resource type="Script" uid="uid://clmdl50gnhhht" path="res://demo_scene.gd" id="1_8m1ix"]
-[ext_resource type="PackedScene" uid="uid://dcoqat0sa0qs6" path="res://pixelated_rope/pixel_rope.tscn" id="2_bk2b3"]
+[ext_resource type="Script" uid="uid://clmdl50gnhhht" path="res://addons/pixel_rope/example/demo_scene.gd" id="1_8m1ix"]
+[ext_resource type="Script" uid="uid://n6l6bwfnbar6" path="res://addons/pixel_rope/scripts/nodes/rope_anchor.gd" id="2_jndiu"]
 
 [node name="MainScene" type="Control"]
 layout_mode = 3
@@ -78,11 +78,9 @@ custom_minimum_size = Vector2(128, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PixelRope" parent="." instance=ExtResource("2_bk2b3")]
-material = null
-position = Vector2(453, 295)
-segment_count = 50
-pixel_size = 8
+[node name="RopeAnchor" type="Node2D" parent="."]
+script = ExtResource("2_jndiu")
+metadata/_custom_type_script = ExtResource("2_jndiu")
 
 [connection signal="value_changed" from="Menu/VBoxContainer/HBoxContainer/PixelSizeSlider" to="." method="_on_pixel_size_slider_value_changed"]
 [connection signal="value_changed" from="Menu/VBoxContainer/HBoxContainer2/PixelSegmentSlider" to="." method="_on_pixel_segment_slider_value_changed"]
