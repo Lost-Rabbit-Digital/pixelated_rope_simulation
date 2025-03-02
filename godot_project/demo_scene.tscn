@@ -79,11 +79,10 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="PixelRope" parent="." instance=ExtResource("2_bk2b3")]
+material = null
 position = Vector2(453, 295)
 segment_count = 50
 pixel_size = 8
-
-[node name="Node2D" type="Node2D" parent="."]
 
 [connection signal="value_changed" from="Menu/VBoxContainer/HBoxContainer/PixelSizeSlider" to="." method="_on_pixel_size_slider_value_changed"]
 [connection signal="value_changed" from="Menu/VBoxContainer/HBoxContainer2/PixelSegmentSlider" to="." method="_on_pixel_segment_slider_value_changed"]

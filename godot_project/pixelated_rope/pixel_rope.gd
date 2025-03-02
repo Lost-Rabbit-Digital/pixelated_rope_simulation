@@ -234,6 +234,7 @@ func _check_rope_state() -> void:
 
 # Draw the rope using Bresenham's line algorithm for pixelation
 func _draw() -> void:
+	
 	if _segments.is_empty():
 		return
 	
@@ -332,7 +333,7 @@ func _draw_pixel(pixel_position: Vector2, size: float, color: Color) -> void:
 	# Position of the pixel, 
 	# size of the pixel, 
 	# and the color of the pixel
-	draw_rect(Rect2(pixel_position - Vector2(size/2, size/2), Vector2(size, size)), Color.RED)
+	draw_rect(Rect2(pixel_position - Vector2(size/2, size/2), Vector2(size, size)), color)
 
 # Public methods
 func break_rope() -> void:
