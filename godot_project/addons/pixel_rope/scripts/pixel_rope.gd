@@ -5,7 +5,7 @@ extends EditorPlugin
 func _enter_tree() -> void:
 	# Register custom node
 	var script = load("res://addons/pixel_rope/scripts/nodes/rope_node.gd")
-	var icon = load("res://addons/pixel_rope/icons/start_anchor_texture.png")
+	var icon = load("res://addons/pixel_rope/icons/debug_yellow.png")
 	
 	if script != null and icon != null:
 		add_custom_type("PixelRope", "Node2D", script, icon)

@@ -81,15 +81,38 @@ size_flags_horizontal = 3
 
 [node name="PixelRope" type="Node2D" parent="."]
 script = ExtResource("2_sjcm7")
-metadata/_custom_type_script = ExtResource("2_sjcm7")
-
-[node name="EndAnchor" type="Node2D" parent="PixelRope"]
-script = ExtResource("2_jndiu")
-metadata/_custom_type_script = ExtResource("2_jndiu")
+segment_count = 50
+segment_length = 25.0
+pixel_size = 8
+metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope"]
+position = Vector2(445, 97)
 script = ExtResource("2_jndiu")
-metadata/_custom_type_script = ExtResource("2_jndiu")
+metadata/_custom_type_script = "uid://n6l6bwfnbar6"
+
+[node name="EndAnchor" type="Node2D" parent="PixelRope"]
+position = Vector2(1108, 209)
+script = ExtResource("2_jndiu")
+metadata/_custom_type_script = "uid://n6l6bwfnbar6"
+
+[node name="PixelRope2" type="Node2D" parent="."]
+script = ExtResource("2_sjcm7")
+segment_count = 50
+segment_length = 35.0
+rope_color = Color(0.562092, 0.642468, 0.773072, 1)
+pixel_size = 8
+metadata/_custom_type_script = "uid://4kshuq8vtrsw"
+
+[node name="StartAnchor" type="Node2D" parent="PixelRope2"]
+position = Vector2(51, 147)
+script = ExtResource("2_jndiu")
+metadata/_custom_type_script = "uid://n6l6bwfnbar6"
+
+[node name="EndAnchor" type="Node2D" parent="PixelRope2"]
+position = Vector2(864, 303)
+script = ExtResource("2_jndiu")
+metadata/_custom_type_script = "uid://n6l6bwfnbar6"
 
 [connection signal="value_changed" from="Menu/VBoxContainer/HBoxContainer/PixelSizeSlider" to="." method="_on_pixel_size_slider_value_changed"]
 [connection signal="value_changed" from="Menu/VBoxContainer/HBoxContainer2/PixelSegmentSlider" to="." method="_on_pixel_segment_slider_value_changed"]
