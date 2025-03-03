@@ -1,5 +1,10 @@
 @tool
 @icon("res://addons/pixel_rope/icons/CircleShape2D.svg")
+## An interactive anchor point for rope connections
+##
+## Creates a circular node that serves as an attachment point for PixelRope instances.
+## Features adjustable radius and color, with built-in collision detection for
+## interaction. Automatically sets up required physics components on creation.
 class_name RopeAnchor
 extends Node2D
 

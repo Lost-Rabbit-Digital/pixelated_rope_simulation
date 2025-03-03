@@ -1,5 +1,12 @@
 @tool
 @icon("res://addons/pixel_rope/icons/Curve2D.svg")
+## A physically-simulated, pixel-perfect rope with Bresenham rendering
+##
+## Implements a complete rope physics system using verlet integration with
+## configurable properties including segment count, length, gravity, and tension.
+## Features pixelated rendering using the Bresenham line algorithm for authentic
+## retro visuals. Supports dynamic interaction with breakable ropes, stretch detection,
+## and drag-and-drop functionality. Requires anchor nodes for start and end points.
 extends Node2D
 class_name PixelRope
 
