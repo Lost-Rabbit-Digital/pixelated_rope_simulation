@@ -42,6 +42,7 @@ enum RopeState {
 @export var anchor_radius: float = 8.0
 @export var anchor_color: Color = Color.WHITE
 @export var end_anchor_draggable: bool = true
+@export var show_anchors: bool = true
 
 # Private variables
 var _start_node: Node2D
@@ -65,6 +66,9 @@ func _ready() -> void:
 	
 	# Create anchor nodes if they don't exist
 	_ensure_anchor_nodes()
+	
+	# Update anchor visibility
+	_update_anchor_visibility()
 	
 	# Initialize in game mode only
 	if not _editor_mode:
@@ -134,6 +138,14 @@ func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
 		collision.owner = get_tree().edited_scene_root
 	
 	return anchor
+
+# Update anchor visibility based on show_anchors property
+func _update_anchor_visibility() -> void:
+	if _start_node and _start_node.has_method("set"):
+		_start_node.set("visible", show_anchors)
+	
+	if _end_node and _end_node.has_method("set"):
+		_end_node.set("visible", show_anchors)
 
 # Set up a node to be draggable
 func _setup_draggable_node(node: Node2D) -> void:
@@ -218,6 +230,9 @@ func _set(property: StringName, value) -> bool:
 			_start_node.set("color", value)
 		if _end_node and _end_node.has_method("set"):
 			_end_node.set("color", value)
+		return true
+	elif property == "show_anchors":
+		_update_anchor_visibility()
 		return true
 	return false
 
