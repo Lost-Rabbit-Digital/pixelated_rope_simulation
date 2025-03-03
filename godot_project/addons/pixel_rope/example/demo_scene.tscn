@@ -1,116 +1,65 @@
-[gd_scene load_steps=4 format=3 uid="uid://3xv28xdk5fcv"]
+[gd_scene load_steps=7 format=3 uid="uid://3xv28xdk5fcv"]
 
-[ext_resource type="Script" uid="uid://clmdl50gnhhht" path="res://addons/pixel_rope/example/demo_scene.gd" id="1_8m1ix"]
 [ext_resource type="Script" uid="uid://n6l6bwfnbar6" path="res://addons/pixel_rope/scripts/nodes/rope_anchor.gd" id="2_jndiu"]
 [ext_resource type="Script" uid="uid://4kshuq8vtrsw" path="res://addons/pixel_rope/scripts/nodes/rope_node.gd" id="2_sjcm7"]
 
-[node name="MainScene" type="Control"]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("1_8m1ix")
+[sub_resource type="CircleShape2D" id="CircleShape2D_jndiu"]
+radius = 8.0
 
-[node name="Menu" type="MarginContainer" parent="."]
-custom_minimum_size = Vector2(256, 176)
-layout_mode = 1
-offset_right = 260.0
-offset_bottom = 176.0
-scale = Vector2(0.998509, 1)
+[sub_resource type="CircleShape2D" id="CircleShape2D_sjcm7"]
+radius = 8.0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Menu"]
-layout_mode = 2
+[sub_resource type="CircleShape2D" id="CircleShape2D_7n5kg"]
+radius = 8.0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Menu/VBoxContainer"]
-layout_mode = 2
+[sub_resource type="CircleShape2D" id="CircleShape2D_ribtc"]
+radius = 8.0
 
-[node name="RichTextLabel" type="RichTextLabel" parent="Menu/VBoxContainer/HBoxContainer"]
-custom_minimum_size = Vector2(128, 32)
-layout_mode = 2
-size_flags_horizontal = 2
-text = "Pixel Size"
-fit_content = true
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="PixelSizeSlider" type="HSlider" parent="Menu/VBoxContainer/HBoxContainer"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(128, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-
-[node name="HBoxContainer2" type="HBoxContainer" parent="Menu/VBoxContainer"]
-layout_mode = 2
-
-[node name="RichTextLabel" type="RichTextLabel" parent="Menu/VBoxContainer/HBoxContainer2"]
-custom_minimum_size = Vector2(128, 32)
-layout_mode = 2
-size_flags_horizontal = 2
-text = "Rope Length"
-fit_content = true
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="PixelSegmentSlider" type="HSlider" parent="Menu/VBoxContainer/HBoxContainer2"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(128, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 1
-
-[node name="HBoxContainer5" type="HBoxContainer" parent="Menu/VBoxContainer"]
-layout_mode = 2
-
-[node name="RichTextLabel" type="RichTextLabel" parent="Menu/VBoxContainer/HBoxContainer5"]
-custom_minimum_size = Vector2(128, 32)
-layout_mode = 2
-size_flags_horizontal = 2
-text = "Pixel Color"
-fit_content = true
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="PixelColorPicker" type="ColorPickerButton" parent="Menu/VBoxContainer/HBoxContainer5"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(128, 32)
-layout_mode = 2
-size_flags_horizontal = 3
+[node name="MainScene" type="Node2D"]
 
 [node name="PixelRope" type="Node2D" parent="."]
+position = Vector2(625, 289)
 script = ExtResource("2_sjcm7")
-segment_count = 50
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope"]
-position = Vector2(445, 97)
+position = Vector2(-100, 0)
 script = ExtResource("2_jndiu")
-metadata/_custom_type_script = "uid://n6l6bwfnbar6"
+
+[node name="Area2D" type="Area2D" parent="PixelRope/StartAnchor"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PixelRope/StartAnchor/Area2D"]
+shape = SubResource("CircleShape2D_jndiu")
 
 [node name="EndAnchor" type="Node2D" parent="PixelRope"]
-position = Vector2(1108, 209)
+position = Vector2(100, 0)
 script = ExtResource("2_jndiu")
-metadata/_custom_type_script = "uid://n6l6bwfnbar6"
+
+[node name="Area2D" type="Area2D" parent="PixelRope/EndAnchor"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PixelRope/EndAnchor/Area2D"]
+shape = SubResource("CircleShape2D_sjcm7")
 
 [node name="PixelRope2" type="Node2D" parent="."]
+position = Vector2(383, 131)
 script = ExtResource("2_sjcm7")
-segment_count = 50
-segment_length = 35.0
-rope_color = Color(0.562092, 0.642468, 0.773072, 1)
+rope_color = Color(0.388053, 0.672852, 0.85448, 1)
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope2"]
-position = Vector2(51, 147)
+position = Vector2(-100, 0)
 script = ExtResource("2_jndiu")
-metadata/_custom_type_script = "uid://n6l6bwfnbar6"
+
+[node name="Area2D" type="Area2D" parent="PixelRope2/StartAnchor"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PixelRope2/StartAnchor/Area2D"]
+shape = SubResource("CircleShape2D_7n5kg")
 
 [node name="EndAnchor" type="Node2D" parent="PixelRope2"]
-position = Vector2(864, 303)
+position = Vector2(100, 0)
 script = ExtResource("2_jndiu")
-metadata/_custom_type_script = "uid://n6l6bwfnbar6"
 
-[connection signal="value_changed" from="Menu/VBoxContainer/HBoxContainer/PixelSizeSlider" to="." method="_on_pixel_size_slider_value_changed"]
-[connection signal="value_changed" from="Menu/VBoxContainer/HBoxContainer2/PixelSegmentSlider" to="." method="_on_pixel_segment_slider_value_changed"]
-[connection signal="color_changed" from="Menu/VBoxContainer/HBoxContainer5/PixelColorPicker" to="." method="_on_pixel_color_picker_color_changed"]
+[node name="Area2D" type="Area2D" parent="PixelRope2/EndAnchor"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PixelRope2/EndAnchor/Area2D"]
+shape = SubResource("CircleShape2D_ribtc")

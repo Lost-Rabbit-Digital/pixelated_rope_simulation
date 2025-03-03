@@ -6,7 +6,7 @@
 ## configurable properties including segment count, length, gravity, and tension.
 ## Features pixelated rendering using the Bresenham line algorithm for authentic
 ## retro visuals. Supports dynamic interaction with breakable ropes, stretch detection,
-## and drag-and-drop functionality. Requires anchor nodes for start and end points.
+## and drag-and-drop functionality. Automatically creates required anchor nodes.
 extends Node2D
 class_name PixelRope
 
@@ -36,9 +36,12 @@ enum RopeState {
 @export var iterations: int = 5
 @export var max_stretch_factor: float = 1.5
 
-# Node references - now using node names since they're children
-@export var start_anchor_name: String = "StartAnchor"
-@export var end_anchor_name: String = "EndAnchor"
+@export_group("Anchor Properties")
+@export var start_position: Vector2 = Vector2(-100, 0)
+@export var end_position: Vector2 = Vector2(100, 0)
+@export var anchor_radius: float = 8.0
+@export var anchor_color: Color = Color.WHITE
+@export var end_anchor_draggable: bool = true
 
 # Private variables
 var _start_node: Node2D
@@ -60,23 +63,17 @@ func _ready() -> void:
 	# Check if we're in the editor
 	_editor_mode = Engine.is_editor_hint()
 	
+	# Create anchor nodes if they don't exist
+	_ensure_anchor_nodes()
+	
 	# Initialize in game mode only
 	if not _editor_mode:
 		# Wait one frame to make sure all nodes are ready
 		await get_tree().process_frame
 		
-		# Get the anchor nodes from children
-		_start_node = find_child(start_anchor_name, true)
-		_end_node = find_child(end_anchor_name, true)
-		
-		if not _start_node or not _end_node:
-			push_error("PixelRope: Could not find anchor nodes named '%s' and '%s'" % [start_anchor_name, end_anchor_name])
-			return
-		
-		print("PixelRope: Initializing rope between", _start_node.name, "and", _end_node.name)
-		
-		# Set up interaction for the end anchor
-		_setup_draggable_node(_end_node)
+		# Set up interaction for the end anchor if needed
+		if end_anchor_draggable:
+			_setup_draggable_node(_end_node)
 		
 		# Initialize the rope
 		_initialize_rope()
@@ -84,6 +81,59 @@ func _ready() -> void:
 	else:
 		# In editor mode, just make it visible
 		queue_redraw()
+
+# Ensure anchor nodes exist and are positioned correctly
+func _ensure_anchor_nodes() -> void:
+	# Handle start anchor
+	_start_node = get_node_or_null("StartAnchor")
+	if not _start_node:
+		_start_node = _create_anchor_node("StartAnchor", start_position)
+	else:
+		_start_node.position = start_position
+	
+	# Handle end anchor
+	_end_node = get_node_or_null("EndAnchor")
+	if not _end_node:
+		_end_node = _create_anchor_node("EndAnchor", end_position)
+	else:
+		_end_node.position = end_position
+
+# Create a new anchor node
+func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
+	var anchor = Node2D.new()
+	anchor.name = node_name
+	anchor.position = position
+	anchor.set_script(load("res://addons/pixel_rope/scripts/nodes/rope_anchor.gd"))
+	
+	# Set properties
+	if anchor.has_method("set") and anchor.get_script():
+		anchor.set("radius", anchor_radius)
+		anchor.set("color", anchor_color)
+	
+	# Create Area2D
+	var area = Area2D.new()
+	area.name = "Area2D"
+	
+	var collision = CollisionShape2D.new()
+	collision.name = "CollisionShape2D"
+	
+	var shape = CircleShape2D.new()
+	shape.radius = anchor_radius
+	
+	collision.shape = shape
+	area.add_child(collision)
+	anchor.add_child(area)
+	
+	add_child(anchor)
+	
+	# If this is being run in the editor, ensure the node is properly set up
+	if Engine.is_editor_hint():
+		# Mark the node as needing to be saved
+		anchor.owner = get_tree().edited_scene_root
+		area.owner = get_tree().edited_scene_root
+		collision.owner = get_tree().edited_scene_root
+	
+	return anchor
 
 # Set up a node to be draggable
 func _setup_draggable_node(node: Node2D) -> void:
@@ -137,6 +187,39 @@ func _initialize_rope() -> void:
 	print("PixelRope: Created", _segments.size(), "segments with length", segment_length)
 	_broken = false
 	_state = RopeState.NORMAL
+
+# Property change handler
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_EDITOR_PRE_SAVE:
+		# Update anchor positions before saving
+		if _start_node and _end_node:
+			start_position = _start_node.position
+			end_position = _end_node.position
+	elif what == NOTIFICATION_PATH_RENAMED:
+		# Relink nodes if path changed
+		_ensure_anchor_nodes()
+
+# Handle property changes in editor
+func _set(property: StringName, value) -> bool:
+	if property == "start_position" and _start_node:
+		_start_node.position = value
+		return true
+	elif property == "end_position" and _end_node:
+		_end_node.position = value
+		return true
+	elif property == "anchor_radius" and (_start_node or _end_node):
+		if _start_node and _start_node.has_method("set"):
+			_start_node.set("radius", value)
+		if _end_node and _end_node.has_method("set"):
+			_end_node.set("radius", value)
+		return true
+	elif property == "anchor_color" and (_start_node or _end_node):
+		if _start_node and _start_node.has_method("set"):
+			_start_node.set("color", value)
+		if _end_node and _end_node.has_method("set"):
+			_end_node.set("color", value)
+		return true
+	return false
 
 # Mouse handling for dragging
 func _input(event: InputEvent) -> void:
@@ -258,10 +341,16 @@ func _check_rope_state() -> void:
 # Draw the rope using Bresenham's line algorithm for pixelation
 func _draw() -> void:
 	if _editor_mode:
-		# Draw a preview in the editor
-		var start = Vector2(-100, 0)
-		var end = Vector2(100, 0)
-		_draw_pixelated_line(start, end, rope_color)
+		# Draw a preview in the editor between anchor positions
+		if _start_node and _end_node:
+			var start = to_local(_start_node.global_position)
+			var end = to_local(_end_node.global_position)
+			_draw_pixelated_line(start, end, rope_color)
+		else:
+			# Fallback if nodes aren't available yet
+			var start = start_position
+			var end = end_position
+			_draw_pixelated_line(start, end, rope_color)
 		return
 	
 	if _segments.is_empty():
