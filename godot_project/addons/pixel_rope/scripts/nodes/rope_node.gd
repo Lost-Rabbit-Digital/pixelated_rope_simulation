@@ -14,12 +14,12 @@ enum RopeState {
 
 # Export variables for inspector
 @export_group("Rope Properties")
-@export var segment_count: int = 20
-@export var segment_length: float = 5.0
+@export var segment_count: int = 30
+@export var segment_length: float = 25.0
 @export var rope_color: Color = Color(0.8, 0.6, 0.2)
 
 @export_group("Pixelation Properties")
-@export var pixel_size: int = 4
+@export var pixel_size: int = 8
 @export var pixel_spacing: int = 0
 
 @export_group("Physics Properties")
