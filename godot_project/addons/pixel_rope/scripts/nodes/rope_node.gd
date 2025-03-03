@@ -1,6 +1,7 @@
 @tool
-class_name PixelRope
+@icon("res://addons/pixel_rope/icons/Curve2D.svg")
 extends Node2D
+class_name PixelRope
 
 # Signals
 signal rope_broken

@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/pixel_rope/icons/CircleShape2D.svg")
 class_name RopeAnchor
 extends Node2D
 
