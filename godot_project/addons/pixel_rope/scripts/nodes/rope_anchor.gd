@@ -19,6 +19,12 @@ extends Node2D
 		color = value
 		queue_redraw()
 
+# Add a property to control whether to draw the circle or not
+@export var visible_shape: bool = false:
+	set(value):
+		visible_shape = value
+		queue_redraw()
+
 var _last_position: Vector2
 var _editor_mode: bool = false
 
@@ -41,6 +47,9 @@ func _ready() -> void:
 		shape.radius = radius
 		
 		collision.shape = shape
+		# Enable debug draw on the collision shape
+		collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
+		
 		area.add_child(collision)
 		add_child(area)
 		
@@ -50,9 +59,18 @@ func _ready() -> void:
 	else:
 		# Update existing shape
 		_update_collision_shape()
+		
+		# Enable debug visualization on existing collision shape
+		var area = get_node_or_null("Area2D")
+		if area:
+			var collision = area.get_node_or_null("CollisionShape2D")
+			if collision:
+				collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, radius, color)
+	# Only draw the circle if visible_shape is true
+	if visible_shape:
+		draw_circle(Vector2.ZERO, radius, color)
 
 func _update_collision_shape() -> void:
 	var area = get_node_or_null("Area2D")
@@ -60,6 +78,8 @@ func _update_collision_shape() -> void:
 		var collision = area.get_node_or_null("CollisionShape2D")
 		if collision and collision.shape is CircleShape2D:
 			collision.shape.radius = radius
+			# Make sure debug draw is enabled
+			collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)
 
 func _notification(what: int) -> void:
 	match what:
@@ -84,14 +104,6 @@ func _notify_parent_of_movement() -> void:
 			
 		# Force a redraw
 		parent.queue_redraw()
-
-# Listen for property changes in the editor
-func _set(property: StringName, value) -> bool:
-	if property == "position" and _editor_mode:
-		# Position changed directly
-		_last_position = value
-		_notify_parent_of_movement()
-	return false
 
 # This is called in the editor when moving the node
 func _process(_delta: float) -> void:

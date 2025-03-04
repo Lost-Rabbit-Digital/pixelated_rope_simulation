@@ -12,14 +12,9 @@ radius = 8.0
 [node name="MainScene" type="Node2D"]
 
 [node name="PixelRope" type="Node2D" parent="."]
-position = Vector2(238, 170)
+position = Vector2(353, 206)
 script = ExtResource("2_sjcm7")
-segment_count = 70
-segment_length = 15.0
-pixel_size = 4
-iterations = 15
-max_stretch_factor = 2.0
-end_position = Vector2(292, -6)
+rope_color = Color(1, 0.721569, 0.0156863, 1)
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope"]
@@ -30,12 +25,14 @@ script = ExtResource("2_jndiu")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PixelRope/StartAnchor/Area2D"]
 shape = SubResource("CircleShape2D_jndiu")
+debug_color = Color(0.7, 0.7, 1, 0.5)
 
 [node name="EndAnchor" type="Node2D" parent="PixelRope"]
-position = Vector2(292, -6)
+position = Vector2(100, 0)
 script = ExtResource("2_jndiu")
 
 [node name="Area2D" type="Area2D" parent="PixelRope/EndAnchor"]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PixelRope/EndAnchor/Area2D"]
 shape = SubResource("CircleShape2D_sjcm7")
+debug_color = Color(0.7, 0.7, 1, 0.5)

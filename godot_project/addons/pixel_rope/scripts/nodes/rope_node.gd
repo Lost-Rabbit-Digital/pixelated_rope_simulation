@@ -41,7 +41,7 @@ enum RopeState {
 			queue_redraw()
 
 @export_group("Pixelation Properties")
-@export var pixel_size: int = 8:
+@export var pixel_size: int = 4:
 	set(value):
 		pixel_size = value
 		if Engine.is_editor_hint():
@@ -98,10 +98,22 @@ enum RopeState {
 			queue_redraw()
 
 @export var end_anchor_draggable: bool = true
-@export var show_anchors: bool = true:
+
+@export_group("Anchor Visualization")
+@export var toggle_anchors: bool = true:
 	set(value):
-		show_anchors = value
+		toggle_anchors = value
 		_update_anchor_visibility()
+
+@export var show_anchor_shapes: bool = false:
+	set(value):
+		show_anchor_shapes = value
+		_update_anchor_visualization()
+
+@export var show_collision_debug: bool = true:
+	set(value):
+		show_collision_debug = value
+		_update_collision_debug_visualization()
 
 # Private variables
 var _start_node: Node2D
@@ -129,8 +141,10 @@ func _ready() -> void:
 	# Create anchor nodes if they don't exist
 	_ensure_anchor_nodes()
 	
-	# Update anchor visibility
+	# Update anchor visibility and visualization
 	_update_anchor_visibility()
+	_update_anchor_visualization()
+	_update_collision_debug_visualization()
 	
 	# Save initial positions for change detection
 	if _start_node and _end_node:
@@ -200,6 +214,7 @@ func _ensure_anchor_nodes() -> void:
 	else:
 		_end_node.position = end_position
 
+
 # Create a new anchor node
 func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
 	var anchor = Node2D.new()
@@ -211,6 +226,7 @@ func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
 	if anchor.has_method("set") and anchor.get_script():
 		anchor.set("radius", anchor_radius)
 		anchor.set("color", anchor_color)
+		anchor.set("visible_shape", show_anchor_shapes)
 	
 	# Create Area2D
 	var area = Area2D.new()
@@ -223,6 +239,13 @@ func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
 	shape.radius = anchor_radius
 	
 	collision.shape = shape
+	
+	# Set debug color based on show_collision_debug setting
+	if show_collision_debug:
+		collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
+	else:
+		collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
+	
 	area.add_child(collision)
 	anchor.add_child(area)
 	
@@ -237,13 +260,13 @@ func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
 	
 	return anchor
 
-# Update anchor visibility based on show_anchors property
+# Update anchor visibility based on toggle_anchors property
 func _update_anchor_visibility() -> void:
 	if _start_node and _start_node.has_method("set"):
-		_start_node.set("visible", show_anchors)
+		_start_node.set("visible", toggle_anchors)
 	
 	if _end_node and _end_node.has_method("set"):
-		_end_node.set("visible", show_anchors)
+		_end_node.set("visible", toggle_anchors)
 
 # Update anchor properties when changed
 func _update_anchor_properties() -> void:
@@ -324,9 +347,48 @@ func _notification(what: int) -> void:
 	elif what == NOTIFICATION_TRANSFORM_CHANGED and Engine.is_editor_hint():
 		queue_redraw()
 
+# Update anchor visualization (showing/hiding drawn shapes)
+func _update_anchor_visualization() -> void:
+	if _start_node and _start_node.has_method("set"):
+		_start_node.set("visible_shape", show_anchor_shapes)
+	
+	if _end_node and _end_node.has_method("set"):
+		_end_node.set("visible_shape", show_anchor_shapes)
+
+# Update collision debug visualization
+func _update_collision_debug_visualization() -> void:
+	if _start_node:
+		var start_area = _start_node.get_node_or_null("Area2D")
+		if start_area:
+			var start_collision = start_area.get_node_or_null("CollisionShape2D")
+			if start_collision:
+				if show_collision_debug:
+					start_collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
+				else:
+					start_collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
+	
+	if _end_node:
+		var end_area = _end_node.get_node_or_null("Area2D")
+		if end_area:
+			var end_collision = end_area.get_node_or_null("CollisionShape2D")
+			if end_collision:
+				if show_collision_debug:
+					end_collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
+				else:
+					end_collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
+
 # Handle property changes in editor
 func _set(property: StringName, value) -> bool:
-	if property == "start_position" and _start_node:
+	if property == "toggle_anchors":
+		_update_anchor_visibility()
+		return true
+	elif property == "show_anchor_shapes":
+		_update_anchor_visualization()
+		return true
+	elif property == "show_collision_debug":
+		_update_collision_debug_visualization()
+		return true
+	elif property == "start_position" and _start_node:
 		_start_node.position = value
 		queue_redraw()
 		return true
@@ -348,7 +410,7 @@ func _set(property: StringName, value) -> bool:
 			_end_node.set("color", value)
 		queue_redraw()
 		return true
-	elif property == "show_anchors":
+	elif property == "toggle_anchors":
 		_update_anchor_visibility()
 		queue_redraw()
 		return true
