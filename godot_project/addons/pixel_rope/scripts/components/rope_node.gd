@@ -30,13 +30,13 @@ enum GrabMode {
 
 # Export variables for inspector
 @export_group("Rope Properties")
-@export var segment_count: int = 30:
+@export var segment_count: int = 100:
 	set(value):
 		segment_count = value
 		if Engine.is_editor_hint():
 			queue_redraw()
 
-@export var segment_length: float = 25.0:
+@export var segment_length: float = 5.0:
 	set(value):
 		segment_length = value
 		if Engine.is_editor_hint():
@@ -135,7 +135,7 @@ enum GrabMode {
 
 @export_group("Collision Properties")
 ## Enable collisions between rope segments and the environment
-@export var enable_collisions: bool = false:
+@export var enable_collisions: bool = true:
 	set(value):
 		enable_collisions = value
 		_setup_collision_detection()
@@ -156,7 +156,7 @@ enum GrabMode {
 		_update_collision_shapes()
 
 ## Enable debug visualization of collision shapes
-@export var show_collision_debug: bool = true:
+@export var show_collision_debug: bool = false:
 	set(value):
 		show_collision_debug = value
 		_update_collision_debug()
