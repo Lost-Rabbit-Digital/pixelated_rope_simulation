@@ -14,6 +14,8 @@ radius = 8.0
 [node name="PixelRope" type="Node2D" parent="."]
 position = Vector2(238, 170)
 script = ExtResource("2_sjcm7")
+end_position = Vector2(255, -47)
+show_anchors = false
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope"]
@@ -26,7 +28,7 @@ script = ExtResource("2_jndiu")
 shape = SubResource("CircleShape2D_jndiu")
 
 [node name="EndAnchor" type="Node2D" parent="PixelRope"]
-position = Vector2(100, 0)
+position = Vector2(255, -47)
 script = ExtResource("2_jndiu")
 
 [node name="Area2D" type="Area2D" parent="PixelRope/EndAnchor"]
