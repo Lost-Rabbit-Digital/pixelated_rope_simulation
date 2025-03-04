@@ -8,8 +8,8 @@
 extends EditorPlugin
 
 # Register custom node types
-const rope_node_script = preload("res://addons/pixel_rope/scripts/nodes/rope_node.gd")
-const rope_anchor_script = preload("res://addons/pixel_rope/scripts/nodes/rope_anchor.gd")
+const rope_node_script = preload("res://addons/pixel_rope/scripts/components/rope_node.gd")
+const rope_anchor_script = preload("res://addons/pixel_rope/scripts/components/rope_anchor.gd")
 const line_algorithms = preload("res://addons/pixel_rope/scripts/utils/line_algorithms.gd")
 
 # Editor gizmo and selection tracking
