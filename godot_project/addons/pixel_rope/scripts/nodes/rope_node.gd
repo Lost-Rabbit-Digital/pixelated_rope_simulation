@@ -1,12 +1,12 @@
 @tool
 @icon("res://addons/pixel_rope/icons/Curve2D.svg")
-## A physically-simulated, pixel-perfect rope with Bresenham rendering
+## A physically-simulated, pixel-perfect rope with multiple rendering algorithms
 ##
 ## Implements a complete rope physics system using verlet integration with
 ## configurable properties including segment count, length, gravity, and tension.
-## Features pixelated rendering using the Bresenham line algorithm for authentic
-## retro visuals. Supports dynamic interaction with breakable ropes, stretch detection,
-## and drag-and-drop functionality. Automatically creates required anchor nodes.
+## Features pixelated rendering using either Bresenham or DDA line algorithms for
+## authentic retro visuals. Supports dynamic interaction with breakable ropes,
+## stretch detection, and drag-and-drop functionality.
 extends Node2D
 class_name PixelRope
 
@@ -29,6 +29,8 @@ enum RopeState {
 @export_group("Pixelation Properties")
 @export var pixel_size: int = 8
 @export var pixel_spacing: int = 0
+## Algorithm to use for drawing the rope line
+@export var line_algorithm: LineAlgorithms.LineAlgorithmType = LineAlgorithms.LineAlgorithmType.BRESENHAM
 
 @export_group("Physics Properties")
 @export var gravity: Vector2 = Vector2(0, 980)
@@ -353,7 +355,7 @@ func _check_rope_state() -> void:
 	else:
 		_state = RopeState.NORMAL
 
-# Draw the rope using Bresenham's line algorithm for pixelation
+# Draw the rope using the selected line algorithm
 func _draw() -> void:
 	if _editor_mode:
 		# Draw a preview in the editor between anchor positions
@@ -396,69 +398,19 @@ func _draw() -> void:
 		for i in range(len(points) - 1):
 			_draw_pixelated_line(points[i], points[i + 1], color)
 
-# Bresenham's line algorithm implementation for pixelated drawing
+# Draw a line using the selected algorithm from LineAlgorithms
 func _draw_pixelated_line(from: Vector2, to: Vector2, color: Color) -> void:
-	# Snap to pixel grid
-	var grid_from = Vector2(
-		round(from.x / pixel_size) * pixel_size,
-		round(from.y / pixel_size) * pixel_size
+	# Get points using the selected algorithm
+	var points = LineAlgorithms.get_line_points(
+		from, to, 
+		pixel_size, 
+		line_algorithm, 
+		pixel_spacing
 	)
-	
-	var grid_to = Vector2(
-		round(to.x / pixel_size) * pixel_size,
-		round(to.y / pixel_size) * pixel_size
-	)
-	
-	# Get the grid points using Bresenham's algorithm
-	var points = _bresenham_line(grid_from, grid_to)
 	
 	# Draw pixels
 	for point in points:
-		# Draw main pixel
 		_draw_pixel(point, pixel_size, color)
-
-# Implementation of Bresenham's line algorithm
-func _bresenham_line(from: Vector2, to: Vector2) -> Array[Vector2]:
-	var points: Array[Vector2] = []
-	
-	var x0 = int(from.x / pixel_size)
-	var y0 = int(from.y / pixel_size)
-	var x1 = int(to.x / pixel_size)
-	var y1 = int(to.y / pixel_size)
-	
-	var dx = abs(x1 - x0)
-	var dy = -abs(y1 - y0)
-	var sx = 1 if x0 < x1 else -1
-	var sy = 1 if y0 < y1 else -1
-	var err = dx + dy
-	
-	# Apply pixel spacing to make the rope less dense
-	var pixel_count = 0
-	
-	while true:
-		# Only add points based on spacing
-		if pixel_spacing == 0 or pixel_count % (pixel_spacing + 1) == 0:
-			points.append(Vector2(x0 * pixel_size, y0 * pixel_size))
-		
-		pixel_count += 1
-		
-		if x0 == x1 and y0 == y1:
-			break
-			
-		var e2 = 2 * err
-		if e2 >= dy:
-			if x0 == x1:
-				break
-			err += dy
-			x0 += sx
-		
-		if e2 <= dx:
-			if y0 == y1:
-				break
-			err += dx
-			y0 += sy
-	
-	return points
 
 # Draw a pixel in the specified position, size, and color
 func _draw_pixel(pixel_position: Vector2, size: float, color: Color) -> void:
