@@ -6,18 +6,26 @@
 ## configurable properties including segment count, length, gravity, and tension.
 ## Features pixelated rendering using either Bresenham or DDA line algorithms for
 ## authentic retro visuals. Supports dynamic interaction with breakable ropes,
-## stretch detection, and drag-and-drop functionality.
+## stretch detection, and drag-and-drop functionality along any point of the rope.
 extends Node2D
 class_name PixelRope
 
 # Signals
 signal rope_broken
+signal rope_grabbed(segment_index: int)
+signal rope_released
 
 # Enums
 enum RopeState {
 	NORMAL,
 	STRETCHED,
 	BROKEN
+}
+
+enum GrabMode {
+	NONE,        ## No interaction with rope
+	ANCHORS_ONLY, ## Only anchor points can be interacted with
+	ANY_POINT    ## Any point along the rope can be interacted with
 }
 
 # Export variables for inspector
@@ -97,8 +105,6 @@ enum RopeState {
 		if Engine.is_editor_hint():
 			queue_redraw()
 
-@export var end_anchor_draggable: bool = true
-
 # New properties for dynamic anchors
 @export_group("Dynamic Anchors")
 ## Makes the start anchor dynamic (affected by physics forces)
@@ -122,6 +128,25 @@ enum RopeState {
 ## Optional custom gravity for dynamic anchors that overrides the main gravity
 @export var anchor_gravity: Vector2 = Vector2.ZERO
 
+@export_group("Interaction Properties")
+## Control how the rope can be interacted with
+@export var interaction_mode: GrabMode = GrabMode.ANY_POINT:
+	set(value):
+		interaction_mode = value
+		_setup_interaction_areas()
+
+## Width of the interaction area around the rope (in pixels)
+@export_range(5.0, 50.0) var interaction_width: float = 20.0:
+	set(value):
+		interaction_width = value
+		_update_interaction_areas()
+
+## How strongly the rope segment being held is pulled toward mouse position
+@export_range(0.1, 1.0) var grab_strength: float = 0.8
+
+## If true, end anchor can be dragged like before
+@export var end_anchor_draggable: bool = true
+
 @export_group("Anchor Visualization")
 @export var show_anchors: bool = true:
 	set(value):
@@ -138,6 +163,12 @@ enum RopeState {
 		show_collision_debug = value
 		_update_collision_debug_visualization()
 
+## Whether to show the interaction areas for debugging
+@export var show_interaction_areas: bool = false:
+	set(value):
+		show_interaction_areas = value
+		_update_interaction_areas_visibility()
+
 # Private variables
 var _start_node: Node2D
 var _end_node: Node2D
@@ -148,9 +179,13 @@ var _initialized: bool = false
 var _last_start_pos: Vector2
 var _last_end_pos: Vector2
 
-# Dragging variables
+# Interaction variables
+var _segment_areas: Array[Area2D] = []
 var _is_dragging: bool = false
 var _mouse_over_end: bool = false
+var _grabbed_segment_index: int = -1
+var _hover_segment_index: int = -1
+var _grab_offset: Vector2 = Vector2.ZERO
 
 # Editor-specific variables
 var _editor_mode: bool = false
@@ -189,6 +224,10 @@ func _ready() -> void:
 		# Initialize the rope
 		_initialize_rope()
 		_initialized = true
+		
+		# Set up segment interaction areas if enabled
+		if interaction_mode == GrabMode.ANY_POINT:
+			_setup_interaction_areas()
 
 # Set up a timer for editor updates
 func _setup_editor_updates() -> void:
@@ -385,7 +424,8 @@ func _initialize_rope() -> void:
 			"old_position": pos,
 			"is_locked": is_locked,
 			"velocity": Vector2.ZERO,  # For additional physics effects
-			"mass": 1.0 if (i > 0 and i < segment_count) else anchor_mass  # Different mass for anchors
+			"mass": 1.0 if (i > 0 and i < segment_count) else anchor_mass,  # Different mass for anchors
+			"is_grabbed": false  # New property to track if this segment is being grabbed
 		})
 	
 	print("PixelRope: Created", _segments.size(), "segments with length", segment_length)
@@ -404,6 +444,113 @@ func _update_segment_lock_states() -> void:
 	# Update end anchor
 	if _segments.size() > segment_count:
 		_segments[segment_count].is_locked = not dynamic_end_anchor
+
+# Set up interaction areas for rope segments
+func _setup_interaction_areas() -> void:
+	# Skip in editor mode
+	if _editor_mode:
+		return
+		
+	# Clean up existing areas
+	for area in _segment_areas:
+		if area:
+			area.queue_free()
+	_segment_areas.clear()
+	
+	# If we're not in "any point" interaction mode, stop here
+	if interaction_mode != GrabMode.ANY_POINT or _segments.is_empty():
+		return
+	
+	# We'll create one area for each segment
+	for i in range(_segments.size() - 1):
+		var area = Area2D.new()
+		area.name = "SegmentArea_" + str(i)
+		
+		# Store segment index as metadata
+		area.set_meta("segment_index", i)
+		
+		# Create the collision shape
+		var collision = CollisionShape2D.new()
+		collision.name = "CollisionShape2D"
+		
+		# Create a capsule shape for the segment
+		var shape = CapsuleShape2D.new()
+		shape.radius = interaction_width / 2.0
+		
+		# Update the shape size and position
+		_update_segment_area_shape(i, shape, collision)
+		
+		collision.shape = shape
+		
+		# Set debug color if needed
+		if show_interaction_areas:
+			collision.debug_color = Color(0.2, 0.8, 0.2, 0.3)  # Light green, very transparent
+		else:
+			collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
+		
+		area.add_child(collision)
+		add_child(area)
+		
+		# Connect mouse signals
+		area.mouse_entered.connect(_on_segment_mouse_entered.bind(i))
+		area.mouse_exited.connect(_on_segment_mouse_exited.bind(i))
+		
+		_segment_areas.append(area)
+	
+	print("PixelRope: Created", _segment_areas.size(), "interaction areas")
+
+# Update the shapes of all segment areas
+func _update_interaction_areas() -> void:
+	if _segments.is_empty() or _segment_areas.is_empty():
+		return
+	
+	for i in range(_segment_areas.size()):
+		var area = _segment_areas[i]
+		var collision = area.get_node_or_null("CollisionShape2D")
+		
+		if collision and collision.shape is CapsuleShape2D:
+			var shape = collision.shape as CapsuleShape2D
+			shape.radius = interaction_width / 2.0
+			_update_segment_area_shape(i, shape, collision)
+			
+			# Update debug color
+			if show_interaction_areas:
+				collision.debug_color = Color(0.2, 0.8, 0.2, 0.3)
+			else:
+				collision.debug_color = Color(0, 0, 0, 0)
+
+# Update a single segment area's shape and position
+func _update_segment_area_shape(segment_index: int, shape: CapsuleShape2D, collision: CollisionShape2D) -> void:
+	if segment_index >= _segments.size() - 1:
+		return
+	
+	# Get the segment points in local coordinates
+	var start_pos = to_local(_segments[segment_index].position)
+	var end_pos = to_local(_segments[segment_index + 1].position)
+	
+	# Calculate the length and angle of the segment
+	var segment_vec = end_pos - start_pos
+	var segment_length = segment_vec.length()
+	var segment_angle = segment_vec.angle()
+	
+	# Update the capsule height (needs to account for the rounded ends)
+	shape.height = max(segment_length, 0.1)  # Prevent zero height
+	
+	# Position the collision shape at the midpoint of the segment
+	collision.position = (start_pos + end_pos) / 2.0
+	
+	# Rotate the collision shape to match the segment angle
+	collision.rotation = segment_angle
+
+# Update visibility of interaction areas
+func _update_interaction_areas_visibility() -> void:
+	for area in _segment_areas:
+		var collision = area.get_node_or_null("CollisionShape2D")
+		if collision:
+			if show_interaction_areas:
+				collision.debug_color = Color(0.2, 0.8, 0.2, 0.3)
+			else:
+				collision.debug_color = Color(0, 0, 0, 0)
 
 # Property change handler
 func _notification(what: int) -> void:
@@ -460,6 +607,15 @@ func _set(property: StringName, value) -> bool:
 	elif property == "dynamic_start_anchor" or property == "dynamic_end_anchor":
 		_update_segment_lock_states()
 		return true
+	elif property == "interaction_mode":
+		_setup_interaction_areas()
+		return true
+	elif property == "interaction_width":
+		_update_interaction_areas()
+		return true
+	elif property == "show_interaction_areas":
+		_update_interaction_areas_visibility()
+		return true
 	return false
 
 # Mouse handling for dragging
@@ -467,13 +623,42 @@ func _input(event: InputEvent) -> void:
 	if _editor_mode:
 		# Handle editor dragging here if needed
 		return
-		
+	
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
-			_is_dragging = event.pressed and _mouse_over_end
-			
-			if not event.pressed and _state == RopeState.BROKEN:
-				reset_rope()
+			if event.pressed:
+				# Start dragging
+				if _mouse_over_end and end_anchor_draggable and not dynamic_end_anchor:
+					# Handle end anchor drag as before
+					_is_dragging = true
+					_grabbed_segment_index = -1
+				elif _hover_segment_index >= 0 and interaction_mode == GrabMode.ANY_POINT:
+					# Start dragging a segment
+					_is_dragging = true
+					_grabbed_segment_index = _hover_segment_index
+					_segments[_grabbed_segment_index].is_grabbed = true
+					
+					# Calculate grab offset (for more natural dragging)
+					var mouse_pos = get_global_mouse_position()
+					_grab_offset = _segments[_grabbed_segment_index].position - mouse_pos
+					
+					# Emit signal
+					emit_signal("rope_grabbed", _grabbed_segment_index)
+			else:
+				# Stop dragging
+				_is_dragging = false
+				
+				# Reset grab state if we were grabbing a segment
+				if _grabbed_segment_index >= 0 and _grabbed_segment_index < _segments.size():
+					_segments[_grabbed_segment_index].is_grabbed = false
+					_grabbed_segment_index = -1
+					
+					# Emit signal
+					emit_signal("rope_released")
+				
+				# Check if we need to reset a broken rope
+				if _state == RopeState.BROKEN:
+					reset_rope()
 
 func _on_end_node_mouse_entered() -> void:
 	_mouse_over_end = true
@@ -481,7 +666,18 @@ func _on_end_node_mouse_entered() -> void:
 
 func _on_end_node_mouse_exited() -> void:
 	_mouse_over_end = false
-	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+	if _hover_segment_index < 0:  # Only reset cursor if not hovering over a segment
+		Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+
+func _on_segment_mouse_entered(segment_index: int) -> void:
+	_hover_segment_index = segment_index
+	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
+
+func _on_segment_mouse_exited(segment_index: int) -> void:
+	if _hover_segment_index == segment_index:
+		_hover_segment_index = -1
+		if not _mouse_over_end:  # Only reset cursor if not hovering over end anchor
+			Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 
 # Called every physics frame
 func _physics_process(delta: float) -> void:
@@ -499,10 +695,21 @@ func _physics_process(delta: float) -> void:
 	if not _initialized or _segments.is_empty():
 		return
 	
-	# Handle dragging of end node - only if it's not dynamic
-	if _is_dragging and not dynamic_end_anchor:
-		_end_node.global_position = get_global_mouse_position()
-		_segments[segment_count].position = _end_node.global_position
+	# Handle dragging based on what's being dragged
+	if _is_dragging:
+		if _grabbed_segment_index >= 0 and _grabbed_segment_index < _segments.size():
+			# Dragging a rope segment
+			var target_pos = get_global_mouse_position() + _grab_offset
+			
+			# Apply grab strength to make dragging feel more responsive
+			_segments[_grabbed_segment_index].position = _segments[_grabbed_segment_index].position.lerp(
+				target_pos, grab_strength
+			)
+			_segments[_grabbed_segment_index].old_position = _segments[_grabbed_segment_index].position
+		elif _mouse_over_end and not dynamic_end_anchor:
+			# Dragging the end anchor (old behavior)
+			_end_node.global_position = get_global_mouse_position()
+			_segments[segment_count].position = _end_node.global_position
 	
 	# If rope is broken, just request redraw to update the red line
 	if _broken:
@@ -526,6 +733,16 @@ func _physics_process(delta: float) -> void:
 	if dynamic_end_anchor:
 		_end_node.global_position = _segments[segment_count].position
 	
+	# Update interaction area shapes to match segment positions
+	if interaction_mode == GrabMode.ANY_POINT and not _segment_areas.is_empty():
+		for i in range(_segment_areas.size()):
+			var area = _segment_areas[i]
+			var collision = area.get_node_or_null("CollisionShape2D")
+			
+			if collision and collision.shape is CapsuleShape2D:
+				var shape = collision.shape as CapsuleShape2D
+				_update_segment_area_shape(i, shape, collision)
+	
 	# Check if rope is stretched too much
 	_check_rope_state()
 	
@@ -538,7 +755,8 @@ func _update_physics(delta: float) -> void:
 	for i in range(_segments.size()):
 		var segment: Dictionary = _segments[i]
 		
-		if segment.is_locked:
+		# Skip locked or grabbed segments
+		if segment.is_locked or segment.is_grabbed:
 			continue
 		
 		var temp: Vector2 = segment.position

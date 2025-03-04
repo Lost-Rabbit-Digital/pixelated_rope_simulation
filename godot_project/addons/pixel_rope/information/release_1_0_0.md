@@ -21,6 +21,7 @@ To-do:
 	- Implement optional tangle system
 	- Figure out graphics, perhaps a gradient? 
 	- Change to MPL 2.0 license
+	- Fix errors that pop up when creating pixelrope
 
 Completed:
 	- Turn into plugin
