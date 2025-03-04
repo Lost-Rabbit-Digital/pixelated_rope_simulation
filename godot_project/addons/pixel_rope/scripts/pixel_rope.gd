@@ -61,18 +61,22 @@ class RopeInspectorPlugin extends EditorInspectorPlugin:
 	func _parse_property(object, type, name, hint_type, hint_string, usage_flags, wide) -> bool:
 		# Add a callback for rope-related properties
 		if object is PixelRope:
-			match name:
-				"start_position", "end_position", "pixel_size", "pixel_spacing", 
-				"segment_count", "segment_length", "rope_color", "line_algorithm":
-					# Connect property change to force redraw
-					add_property_change_callback(name, object, "_on_property_changed")
+			var rope_properties = ["start_position", "end_position", "pixel_size", "pixel_spacing", 
+								  "segment_count", "segment_length", "rope_color", "line_algorithm"]
+			if rope_properties.has(name):
+				# Connect to property signals the standard way
+				var property = object.get_property_list().filter(func(p): return p.name == name)[0]
+				property.connect("changed", Callable(object, "queue_redraw"))
 		
 		# Also handle anchor properties
 		if object is RopeAnchor:
-			match name:
-				"position":
-					# Force parent rope to redraw when anchor moves
-					add_property_change_callback(name, object, "_on_position_changed")
+			var anchor_properties = ["position"]
+			if anchor_properties.has(name):
+				# Instead of using the callback, we'll connect to signals directly
+				if object.is_connected("position_changed", Callable(object, "_notify_parent_of_movement")):
+					pass
+				else:
+					object.connect("position_changed", Callable(object, "_notify_parent_of_movement"))
 		
 		# Return false to let the default inspector handle the property
 		return false
