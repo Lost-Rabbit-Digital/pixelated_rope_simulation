@@ -49,7 +49,7 @@ enum GrabMode {
 			queue_redraw()
 
 @export_group("Pixelation Properties")
-@export var pixel_size: int = 8:
+@export var pixel_size: int = 4:
 	set(value):
 		pixel_size = value
 		if Engine.is_editor_hint():
