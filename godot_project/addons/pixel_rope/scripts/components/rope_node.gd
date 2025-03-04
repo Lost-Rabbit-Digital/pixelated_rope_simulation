@@ -304,7 +304,7 @@ func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
 	# Connect position change signal with the node as the bind parameter
 	anchor.position_changed.connect(_on_anchor_position_changed.bind(anchor))
 	
-	add_child(anchor)
+	add_child.call_deferred(anchor)
 	
 	# If this is being run in the editor, ensure the node is properly set up
 	if Engine.is_editor_hint() and get_tree().edited_scene_root:

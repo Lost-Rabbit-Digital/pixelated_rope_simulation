@@ -60,7 +60,7 @@ static func create_anchor_node(
 	# Connect position change signal
 	anchor.position_changed.connect(position_changed_callback.bind(anchor))
 	
-	parent.add_child(anchor)
+	parent.add_child.call_deferred(anchor)
 	
 	# Set ownership in editor
 	if Engine.is_editor_hint() and parent.get_tree().edited_scene_root:
