@@ -12,8 +12,9 @@ radius = 8.0
 [node name="MainScene" type="Node2D"]
 
 [node name="PixelRope" type="Node2D" parent="."]
-position = Vector2(656, 91)
+position = Vector2(729, 88)
 script = ExtResource("2_sjcm7")
+pixel_size = 4
 interaction_mode = null
 interaction_width = null
 grab_strength = null
