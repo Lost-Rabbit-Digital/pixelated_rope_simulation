@@ -261,38 +261,79 @@ func _ensure_anchor_nodes() -> void:
 	# Handle start anchor
 	_start_node = get_node_or_null("StartAnchor") 
 	if not _start_node:
-		_start_node = RopeFactory.create_anchor_node(
-			"StartAnchor", 
-			start_position, 
-			anchor_radius, 
-			anchor_debug_color, 
-			show_anchor_debug,
-			_on_anchor_position_changed,
-			self
-		)
+		_start_node = _create_anchor_node("StartAnchor", start_position)
 	else:
-		# Update existing node
+		# Make sure existing node has correct position and properties
 		_start_node.position = start_position
-		if _start_node is RopeAnchor and not _start_node.position_changed.is_connected(_on_anchor_position_changed):
+		if _start_node is RopeAnchor:
+			_update_anchor_node_properties(_start_node)
+			# Safely disconnect and reconnect signal to prevent duplicates
+			if _start_node.position_changed.is_connected(_on_anchor_position_changed):
+				_start_node.position_changed.disconnect(_on_anchor_position_changed)
 			_start_node.position_changed.connect(_on_anchor_position_changed.bind(_start_node))
 	
-	# Handle end anchor (similar to start anchor)
+	# Handle end anchor
 	_end_node = get_node_or_null("EndAnchor")
 	if not _end_node:
-		_end_node = RopeFactory.create_anchor_node(
-			"EndAnchor", 
-			end_position, 
-			anchor_radius, 
-			anchor_debug_color, 
-			show_anchor_debug,
-			_on_anchor_position_changed,
-			self
-		)
+		_end_node = _create_anchor_node("EndAnchor", end_position)
 	else:
-		# Update existing node
+		# Make sure existing node has correct position and properties
 		_end_node.position = end_position
-		if _end_node is RopeAnchor and not _end_node.position_changed.is_connected(_on_anchor_position_changed):
+		if _end_node is RopeAnchor:
+			_update_anchor_node_properties(_end_node)
+			# Safely disconnect and reconnect signal to prevent duplicates
+			if _end_node.position_changed.is_connected(_on_anchor_position_changed):
+				_end_node.position_changed.disconnect(_on_anchor_position_changed)
 			_end_node.position_changed.connect(_on_anchor_position_changed.bind(_end_node))
+
+func _update_anchor_node_properties(anchor: RopeAnchor) -> void:
+	anchor.radius = anchor_radius
+	anchor.debug_color = anchor_debug_color
+	anchor.show_debug_shape = show_anchor_debug
+
+func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
+	var anchor = RopeAnchor.new()
+	anchor.name = node_name
+	anchor.position = position
+	
+	# Set properties
+	anchor.radius = anchor_radius
+	anchor.debug_color = anchor_debug_color
+	anchor.show_debug_shape = show_anchor_debug
+	
+	# Connect position change signal with the node as the bind parameter
+	anchor.position_changed.connect(_on_anchor_position_changed.bind(anchor))
+	
+	add_child(anchor)
+	
+	# If this is being run in the editor, ensure the node is properly set up
+	if Engine.is_editor_hint() and get_tree().edited_scene_root:
+		anchor.owner = get_tree().edited_scene_root
+	
+	return anchor
+
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_PARENTED:
+			# When the node gets a new parent, we need to ensure signals are properly connected
+			if not Engine.is_editor_hint():
+				call_deferred("_reconnect_anchor_signals")
+
+func _reconnect_anchor_signals() -> void:
+	if not is_inside_tree():
+		return
+		
+	# Reconnect start anchor
+	if _start_node is RopeAnchor:
+		if _start_node.position_changed.is_connected(_on_anchor_position_changed):
+			_start_node.position_changed.disconnect(_on_anchor_position_changed)
+		_start_node.position_changed.connect(_on_anchor_position_changed.bind(_start_node))
+	
+	# Reconnect end anchor
+	if _end_node is RopeAnchor:
+		if _end_node.position_changed.is_connected(_on_anchor_position_changed):
+			_end_node.position_changed.disconnect(_on_anchor_position_changed)
+		_end_node.position_changed.connect(_on_anchor_position_changed.bind(_end_node))
 
 # Handle anchor position change signal
 func _on_anchor_position_changed(anchor: RopeAnchor) -> void:
