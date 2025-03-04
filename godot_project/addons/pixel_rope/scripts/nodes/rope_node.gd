@@ -216,22 +216,45 @@ func _setup_collision_detection() -> void:
 	if not enable_collisions:
 		return
 	
-	# Get the direct space state for collision queries
-	_physics_direct_state = get_world_2d().direct_space_state
-	
-	# Create collision shapes for each segment
+	# We'll set up the shapes immediately, but defer the space state acquisition
+	# Clear any existing collision shapes
 	_segment_collision_shapes.clear()
-	for i in range(_segments.size()):
-		var shape = CircleShape2D.new()
-		shape.radius = collision_radius
-		_segment_collision_shapes.append(shape)
+	
+	# Create collision shapes for each segment if we have segments
+	if not _segments.is_empty():
+		for i in range(_segments.size()):
+			var shape = CircleShape2D.new()
+			shape.radius = collision_radius
+			_segment_collision_shapes.append(shape)
 	
 	# Create physics query parameters
 	_collision_query = PhysicsShapeQueryParameters2D.new()
 	_collision_query.collision_mask = collision_mask
 	_collision_query.margin = 2.0  # Small margin to improve collision detection
 	
-	print("PixelRope: Collision detection initialized")
+	# Schedule the physics state acquisition for the next frame
+	# This ensures the world is properly set up
+	call_deferred("_initialize_physics_state")
+	
+	print("PixelRope: Collision detection prepared")
+
+func _initialize_physics_state() -> void:
+	if Engine.is_editor_hint() or not enable_collisions:
+		return
+		
+	if not is_inside_tree():
+		# If not in tree yet, try again next frame
+		call_deferred("_initialize_physics_state")
+		return
+		
+	# Now try to get the physics world
+	var world = get_world_2d()
+	if world:
+		_physics_direct_state = world.direct_space_state
+		print("PixelRope: Physics state successfully initialized")
+	else:
+		# If world not available yet, try again next frame
+		call_deferred("_initialize_physics_state")
 
 # Called when the node enters the scene tree
 func _ready() -> void:
@@ -261,15 +284,17 @@ func _ready() -> void:
 		# Initialize the rope
 		_initialize_rope()
 		
-		# Set up collision detection
-		if enable_collisions:
-			_setup_collision_detection()
-		
+		# Mark as initialized before setting up collisions
 		_initialized = true
 		
 		# Set up segment interaction areas if enabled
 		if interaction_mode == GrabMode.ANY_POINT:
 			_setup_interaction_areas()
+		
+		# Set up collision detection if enabled
+		# Using call_deferred to ensure we're fully in the scene tree
+		if enable_collisions:
+			call_deferred("_setup_collision_detection")
 
 # Update collision shapes if radius changes
 func _update_collision_shapes() -> void:
@@ -668,15 +693,28 @@ func _on_segment_mouse_exited(segment_index: int) -> void:
 		if not _mouse_over_end:  # Only reset cursor if not hovering over end anchor
 			Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 
+# Handle collisions during physics update
 func _handle_collisions() -> void:
-	if not enable_collisions or not _physics_direct_state:
+	# Safety checks to prevent errors
+	if not enable_collisions:
+		return
+		
+	if not _physics_direct_state:
+		# Try to get the physics state if not yet initialized
+		var world = get_world_2d()
+		if world:
+			_physics_direct_state = world.direct_space_state
+		else:
+			return
+	
+	if _segment_collision_shapes.is_empty() or _segments.is_empty() or not _collision_query:
 		return
 		
 	# Clear last frame's collisions for debug visualization
 	_last_collisions.clear()
 	
 	# Check collisions for each segment
-	for i in range(_segments.size()):
+	for i in range(min(_segments.size(), _segment_collision_shapes.size())):
 		var segment = _segments[i]
 		
 		# Skip locked or grabbed segments
@@ -687,7 +725,7 @@ func _handle_collisions() -> void:
 		_collision_query.shape = _segment_collision_shapes[i]
 		_collision_query.transform = Transform2D(0, segment.position)
 		
-		# Perform the collision query
+		# Perform the collision query with safety check
 		var collisions = _physics_direct_state.intersect_shape(_collision_query, 1)
 		
 		if not collisions.is_empty():
@@ -840,8 +878,23 @@ func _update_physics(delta: float) -> void:
 	for _i in range(iterations):
 		_apply_constraints()
 	
-	# Handle collisions after constraints
+	# Handle collisions after constraints, with proper error handling
 	if enable_collisions:
+		# Make sure collision shapes are initialized
+		if _segment_collision_shapes.is_empty() and _segments.size() > 0:
+			# Initialize collision shapes if they weren't created yet
+			for i in range(_segments.size()):
+				var shape = CircleShape2D.new()
+				shape.radius = collision_radius
+				_segment_collision_shapes.append(shape)
+			
+			# Create or update physics query parameters
+			if not _collision_query:
+				_collision_query = PhysicsShapeQueryParameters2D.new()
+				_collision_query.collision_mask = collision_mask
+				_collision_query.margin = 2.0
+		
+		# Now try to handle collisions
 		_handle_collisions()
 
 # Maintain proper distance between segments
