@@ -18,6 +18,15 @@ A high-performance, pixel-perfect rope simulation plugin for Godot 4.4, featurin
 - 🎮 **Full interaction** support with grabbing, breaking, and dynamic anchors
 - 🎨 **Visual customization** with adjustable pixel size, spacing, and colors
 
+### Adding a PixelRope to your scene
+
+1. Right-click in the Scene panel and select "Add Child Node"
+2. Search for "PixelRope" and select it
+3. The rope will appear with default anchors that you can position
+4. Adjust properties in the Inspector panel
+
+Or create one through code:
+
 ```gdscript
 # Adding a rope is as simple as:
 var rope = PixelRope.new()
@@ -28,6 +37,17 @@ add_child(rope)
 ```
 
 ## 📥 Installation
+
+### Method 1: Godot AssetLib (Recommended)
+
+1. Open your Godot project
+2. Navigate to AssetLib tab in the top center of the editor
+3. Search for "PixelRope"
+4. Click on the plugin and press "Download"
+5. In the installation dialog, click "Install"
+6. Enable the plugin in Project Settings > Plugins
+
+### Method 2: Manual Installation
 
 1. Download the plugin from the [GitHub repository](https://github.com/Lost-Rabbit-Digital/pixelated_rope_simulation)
 2. Extract the `addons/pixel_rope` folder into your project's `addons` directory

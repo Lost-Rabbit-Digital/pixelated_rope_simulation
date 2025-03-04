@@ -7,6 +7,5 @@
 [node name="PixelRope" type="Node2D" parent="."]
 position = Vector2(744, 166)
 script = ExtResource("2_sjcm7")
-show_anchors = false
-show_collision_debug = false
+pixel_size = 4
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
