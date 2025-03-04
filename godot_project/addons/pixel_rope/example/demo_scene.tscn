@@ -1,41 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://3xv28xdk5fcv"]
+[gd_scene load_steps=2 format=3 uid="uid://3xv28xdk5fcv"]
 
-[ext_resource type="Script" uid="uid://n6l6bwfnbar6" path="res://addons/pixel_rope/scripts/nodes/rope_anchor.gd" id="2_jndiu"]
 [ext_resource type="Script" uid="uid://4kshuq8vtrsw" path="res://addons/pixel_rope/scripts/nodes/rope_node.gd" id="2_sjcm7"]
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_jndiu"]
-radius = 8.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_sjcm7"]
-radius = 8.0
 
 [node name="MainScene" type="Node2D"]
 
 [node name="PixelRope" type="Node2D" parent="."]
-position = Vector2(656, 91)
+position = Vector2(560, 242)
 script = ExtResource("2_sjcm7")
-interaction_mode = null
-interaction_width = null
-grab_strength = null
-show_interaction_areas = null
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
-
-[node name="StartAnchor" type="Node2D" parent="PixelRope"]
-position = Vector2(-100, 0)
-script = ExtResource("2_jndiu")
-
-[node name="Area2D" type="Area2D" parent="PixelRope/StartAnchor"]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="PixelRope/StartAnchor/Area2D"]
-shape = SubResource("CircleShape2D_jndiu")
-debug_color = Color(0.7, 0.7, 1, 0.5)
-
-[node name="EndAnchor" type="Node2D" parent="PixelRope"]
-position = Vector2(100, 0)
-script = ExtResource("2_jndiu")
-
-[node name="Area2D" type="Area2D" parent="PixelRope/EndAnchor"]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="PixelRope/EndAnchor/Area2D"]
-shape = SubResource("CircleShape2D_sjcm7")
-debug_color = Color(0.7, 0.7, 1, 0.5)
