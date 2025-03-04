@@ -71,8 +71,8 @@ enum GrabMode {
 @export_group("Physics Properties")
 @export var gravity: Vector2 = Vector2(0, 980)
 @export var damping: float = 0.98
-@export var iterations: int = 5
-@export var max_stretch_factor: float = 1.5
+@export var iterations: int = 10
+@export var max_stretch_factor: float = 2
 
 @export_group("Anchor Properties")
 @export var start_position: Vector2 = Vector2(-100, 0):
@@ -98,7 +98,7 @@ enum GrabMode {
 		if Engine.is_editor_hint():
 			queue_redraw()
 
-@export var anchor_debug_color: Color = Color(0.7, 0.7, 1.0, 0.5):
+@export var anchor_debug_color: Color = Color(0.0, 0.698, 0.885, 0.5):
 	set(value):
 		anchor_debug_color = value
 		_update_anchor_properties()
@@ -119,7 +119,7 @@ enum GrabMode {
 		_update_segment_lock_states()
 
 ## Makes the end anchor dynamic (affected by physics forces)
-@export var dynamic_end_anchor: bool = false:
+@export var dynamic_end_anchor: bool = true:
 	set(value):
 		dynamic_end_anchor = value
 		_update_segment_lock_states()
