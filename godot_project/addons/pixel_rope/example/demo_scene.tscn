@@ -17,10 +17,9 @@ script = ExtResource("2_sjcm7")
 segment_count = 70
 segment_length = 15.0
 pixel_size = 4
-pixel_spacing = 2
 iterations = 15
 max_stretch_factor = 2.0
-end_position = Vector2(255, -47)
+end_position = Vector2(292, -6)
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope"]
@@ -33,7 +32,7 @@ script = ExtResource("2_jndiu")
 shape = SubResource("CircleShape2D_jndiu")
 
 [node name="EndAnchor" type="Node2D" parent="PixelRope"]
-position = Vector2(255, -47)
+position = Vector2(292, -6)
 script = ExtResource("2_jndiu")
 
 [node name="Area2D" type="Area2D" parent="PixelRope/EndAnchor"]

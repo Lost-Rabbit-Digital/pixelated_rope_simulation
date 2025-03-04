@@ -8,6 +8,7 @@ Current Features:
 	- Configurable elasticity
 	- Moveable anchors
 	- Dynamic color
+	- Live updating while in-editor 
 
 Requested features:
 	- RigidBody2D https://bsky.app/profile/atropos148.bsky.social/post/3ljhccxiiyc2g

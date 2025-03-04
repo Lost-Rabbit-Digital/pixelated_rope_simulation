@@ -22,15 +22,43 @@ enum RopeState {
 
 # Export variables for inspector
 @export_group("Rope Properties")
-@export var segment_count: int = 30
-@export var segment_length: float = 25.0
-@export var rope_color: Color = Color(0.8, 0.6, 0.2)
+@export var segment_count: int = 30:
+	set(value):
+		segment_count = value
+		if Engine.is_editor_hint():
+			queue_redraw()
+
+@export var segment_length: float = 25.0:
+	set(value):
+		segment_length = value
+		if Engine.is_editor_hint():
+			queue_redraw()
+
+@export var rope_color: Color = Color(0.8, 0.6, 0.2):
+	set(value):
+		rope_color = value
+		if Engine.is_editor_hint():
+			queue_redraw()
 
 @export_group("Pixelation Properties")
-@export var pixel_size: int = 8
-@export var pixel_spacing: int = 0
+@export var pixel_size: int = 8:
+	set(value):
+		pixel_size = value
+		if Engine.is_editor_hint():
+			queue_redraw()
+
+@export var pixel_spacing: int = 0:
+	set(value):
+		pixel_spacing = value
+		if Engine.is_editor_hint():
+			queue_redraw()
+
 ## Algorithm to use for drawing the rope line
-@export var line_algorithm: LineAlgorithms.LineAlgorithmType = LineAlgorithms.LineAlgorithmType.BRESENHAM
+@export var line_algorithm: LineAlgorithms.LineAlgorithmType = LineAlgorithms.LineAlgorithmType.BRESENHAM:
+	set(value):
+		line_algorithm = value
+		if Engine.is_editor_hint():
+			queue_redraw()
 
 @export_group("Physics Properties")
 @export var gravity: Vector2 = Vector2(0, 980)
@@ -39,12 +67,41 @@ enum RopeState {
 @export var max_stretch_factor: float = 1.5
 
 @export_group("Anchor Properties")
-@export var start_position: Vector2 = Vector2(-100, 0)
-@export var end_position: Vector2 = Vector2(100, 0)
-@export var anchor_radius: float = 8.0
-@export var anchor_color: Color = Color.WHITE
+@export var start_position: Vector2 = Vector2(-100, 0):
+	set(value):
+		start_position = value
+		if _start_node:
+			_start_node.position = value
+		if Engine.is_editor_hint():
+			queue_redraw()
+
+@export var end_position: Vector2 = Vector2(100, 0):
+	set(value):
+		end_position = value
+		if _end_node:
+			_end_node.position = value
+		if Engine.is_editor_hint():
+			queue_redraw()
+
+@export var anchor_radius: float = 8.0:
+	set(value):
+		anchor_radius = value
+		_update_anchor_properties()
+		if Engine.is_editor_hint():
+			queue_redraw()
+
+@export var anchor_color: Color = Color.WHITE:
+	set(value):
+		anchor_color = value
+		_update_anchor_properties()
+		if Engine.is_editor_hint():
+			queue_redraw()
+
 @export var end_anchor_draggable: bool = true
-@export var show_anchors: bool = true
+@export var show_anchors: bool = true:
+	set(value):
+		show_anchors = value
+		_update_anchor_visibility()
 
 # Private variables
 var _start_node: Node2D
@@ -53,6 +110,8 @@ var _segments: Array[Dictionary] = []
 var _state: RopeState = RopeState.NORMAL
 var _broken: bool = false
 var _initialized: bool = false
+var _last_start_pos: Vector2
+var _last_end_pos: Vector2
 
 # Dragging variables
 var _is_dragging: bool = false
@@ -60,6 +119,7 @@ var _mouse_over_end: bool = false
 
 # Editor-specific variables
 var _editor_mode: bool = false
+var _editor_timer: SceneTreeTimer
 
 # Called when the node enters the scene tree
 func _ready() -> void:
@@ -72,9 +132,17 @@ func _ready() -> void:
 	# Update anchor visibility
 	_update_anchor_visibility()
 	
-	# Initialize in game mode only
-	if not _editor_mode:
-		# Wait one frame to make sure all nodes are ready
+	# Save initial positions for change detection
+	if _start_node and _end_node:
+		_last_start_pos = _start_node.position
+		_last_end_pos = _end_node.position
+	
+	# Set up editor update timer
+	if _editor_mode:
+		_setup_editor_updates()
+		queue_redraw()
+	else:
+		# Initialize in game mode only
 		await get_tree().process_frame
 		
 		# Set up interaction for the end anchor if needed
@@ -84,9 +152,37 @@ func _ready() -> void:
 		# Initialize the rope
 		_initialize_rope()
 		_initialized = true
-	else:
-		# In editor mode, just make it visible
-		queue_redraw()
+
+# Set up a timer for editor updates
+func _setup_editor_updates() -> void:
+	# Cancel any existing timer
+	if _editor_timer and not _editor_timer.is_queued_for_deletion():
+		_editor_timer.disconnect("timeout", Callable(self, "_check_for_anchor_movement"))
+		
+	# Create a new timer that fires frequently to check for changes
+	_editor_timer = get_tree().create_timer(0.05) # 50ms
+	_editor_timer.connect("timeout", Callable(self, "_check_for_anchor_movement"))
+
+# Check if anchors have moved and trigger redraws
+func _check_for_anchor_movement() -> void:
+	if not _editor_mode:
+		return
+		
+	if _start_node and _end_node:
+		if _start_node.position != _last_start_pos or _end_node.position != _last_end_pos:
+			# Update stored positions
+			_last_start_pos = _start_node.position
+			_last_end_pos = _end_node.position
+			
+			# Update export variables to match current positions
+			start_position = _start_node.position
+			end_position = _end_node.position
+			
+			# Redraw rope
+			queue_redraw()
+	
+	# Set up next timer
+	_setup_editor_updates()
 
 # Ensure anchor nodes exist and are positioned correctly
 func _ensure_anchor_nodes() -> void:
@@ -149,6 +245,16 @@ func _update_anchor_visibility() -> void:
 	if _end_node and _end_node.has_method("set"):
 		_end_node.set("visible", show_anchors)
 
+# Update anchor properties when changed
+func _update_anchor_properties() -> void:
+	if _start_node and _start_node.has_method("set"):
+		_start_node.set("radius", anchor_radius)
+		_start_node.set("color", anchor_color)
+	
+	if _end_node and _end_node.has_method("set"):
+		_end_node.set("radius", anchor_radius)
+		_end_node.set("color", anchor_color)
+
 # Set up a node to be draggable
 func _setup_draggable_node(node: Node2D) -> void:
 	# Use Area2D for mouse interaction
@@ -209,38 +315,49 @@ func _notification(what: int) -> void:
 		if _start_node and _end_node:
 			start_position = _start_node.position
 			end_position = _end_node.position
+			queue_redraw()
 	elif what == NOTIFICATION_PATH_RENAMED:
 		# Relink nodes if path changed
 		_ensure_anchor_nodes()
+		queue_redraw()
+	# Handle transform changes in the editor
+	elif what == NOTIFICATION_TRANSFORM_CHANGED and Engine.is_editor_hint():
+		queue_redraw()
 
 # Handle property changes in editor
 func _set(property: StringName, value) -> bool:
 	if property == "start_position" and _start_node:
 		_start_node.position = value
+		queue_redraw()
 		return true
 	elif property == "end_position" and _end_node:
 		_end_node.position = value
+		queue_redraw()
 		return true
 	elif property == "anchor_radius" and (_start_node or _end_node):
 		if _start_node and _start_node.has_method("set"):
 			_start_node.set("radius", value)
 		if _end_node and _end_node.has_method("set"):
 			_end_node.set("radius", value)
+		queue_redraw()
 		return true
 	elif property == "anchor_color" and (_start_node or _end_node):
 		if _start_node and _start_node.has_method("set"):
 			_start_node.set("color", value)
 		if _end_node and _end_node.has_method("set"):
 			_end_node.set("color", value)
+		queue_redraw()
 		return true
 	elif property == "show_anchors":
 		_update_anchor_visibility()
+		queue_redraw()
 		return true
 	return false
 
 # Mouse handling for dragging
 func _input(event: InputEvent) -> void:
 	if _editor_mode:
+		# Handle editor dragging here if needed
 		return
 		
 	if event is InputEventMouseButton:
@@ -260,10 +377,18 @@ func _on_end_node_mouse_exited() -> void:
 
 # Called every physics frame
 func _physics_process(delta: float) -> void:
-	if _editor_mode or not _initialized:
+	if _editor_mode:
+		# In editor mode, check if anchors have moved
+		if _start_node and _end_node:
+			if _start_node.position != _last_start_pos or _end_node.position != _last_end_pos:
+				_last_start_pos = _start_node.position
+				_last_end_pos = _end_node.position
+				start_position = _start_node.position
+				end_position = _end_node.position
+				queue_redraw()
 		return
 		
-	if _segments.is_empty():
+	if not _initialized or _segments.is_empty():
 		return
 	
 	# Handle dragging of end node - keep this active even when broken
@@ -433,6 +558,14 @@ func reset_rope() -> void:
 
 func get_state() -> int:
 	return _state
+
+# Listen for child transforms changing
+func _on_child_transform_changed() -> void:
+	if Engine.is_editor_hint():
+		if _start_node and _end_node:
+			start_position = _start_node.position
+			end_position = _end_node.position
+			queue_redraw()
 
 # Editor methods
 func _get_tool_buttons() -> Array:
