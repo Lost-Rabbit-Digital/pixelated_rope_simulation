@@ -16,10 +16,10 @@ position = Vector2(238, 170)
 script = ExtResource("2_sjcm7")
 segment_count = 70
 segment_length = 15.0
-pixel_size = 2
-line_algorithm = 1
-iterations = 25
-max_stretch_factor = 5.0
+pixel_size = 4
+pixel_spacing = 2
+iterations = 15
+max_stretch_factor = 2.0
 end_position = Vector2(255, -47)
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
