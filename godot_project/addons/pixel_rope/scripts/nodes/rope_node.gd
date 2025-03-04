@@ -105,11 +105,6 @@ enum GrabMode {
 		if Engine.is_editor_hint():
 			queue_redraw()
 
-@export var show_anchor_debug: bool = true:
-	set(value):
-		show_anchor_debug = value
-		_update_anchor_debug_visualization()
-
 # New properties for dynamic anchors
 @export_group("Dynamic Anchors")
 ## Makes the start anchor dynamic (affected by physics forces)
@@ -152,28 +147,6 @@ enum GrabMode {
 ## If true, end anchor can be dragged like before
 @export var end_anchor_draggable: bool = true
 
-@export_group("Anchor Visualization")
-@export var show_anchors: bool = true:
-	set(value):
-		show_anchors = value
-		_update_anchor_debug_visualization()
-
-@export var show_anchor_shapes: bool = false:
-	set(value):
-		show_anchor_shapes = value
-		_update_anchor_visualization()
-
-@export var show_collision_debug: bool = true:
-	set(value):
-		show_collision_debug = value
-		_update_collision_debug_visualization()
-
-## Whether to show the interaction areas for debugging
-@export var show_interaction_areas: bool = false:
-	set(value):
-		show_interaction_areas = value
-		_update_interaction_areas_visibility()
-
 # Private variables
 var _start_node: Node2D
 var _end_node: Node2D
@@ -203,11 +176,6 @@ func _ready() -> void:
 	
 	# Create anchor nodes if they don't exist
 	_ensure_anchor_nodes()
-	
-	# Update anchor visibility and visualization
-	_update_anchor_debug_visualization()
-	_update_anchor_visualization()
-	_update_collision_debug_visualization()
 	
 	# Save initial positions for change detection
 	if _start_node and _end_node:
@@ -297,57 +265,17 @@ func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
 	# Set properties
 	anchor.radius = anchor_radius
 	anchor.debug_color = anchor_debug_color
-	anchor.show_debug_shape = show_anchor_debug
 	
 	# Connect position change signal
 	anchor.position_changed.connect(_on_anchor_position_changed.bind(anchor))
 	
-	add_child(anchor)
+	add_child.call_deferred(anchor)
 	
 	# If this is being run in the editor, ensure the node is properly set up
 	if Engine.is_editor_hint() and get_tree().edited_scene_root:
 		anchor.owner = get_tree().edited_scene_root
 	
 	return anchor
-
-
-# Update anchor visibility based on show_anchors property
-func _update_anchor_debug_visualization() -> void:
-	if _start_node and _start_node is RopeAnchor:
-		_start_node.show_debug_shape = show_anchor_debug
-	
-	if _end_node and _end_node is RopeAnchor:
-		_end_node.show_debug_shape = show_anchor_debug
-
-# Update anchor visualization (showing/hiding drawn shapes)
-func _update_anchor_visualization() -> void:
-	if _start_node and _start_node.has_method("set"):
-		_start_node.set("visible_shape", show_anchor_shapes)
-	
-	if _end_node and _end_node.has_method("set"):
-		_end_node.set("visible_shape", show_anchor_shapes)
-
-# Update collision debug visualization
-func _update_collision_debug_visualization() -> void:
-	if _start_node:
-		var start_area = _start_node.get_node_or_null("Area2D")
-		if start_area:
-			var start_collision = start_area.get_node_or_null("CollisionShape2D")
-			if start_collision:
-				if show_collision_debug:
-					start_collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
-				else:
-					start_collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
-	
-	if _end_node:
-		var end_area = _end_node.get_node_or_null("Area2D")
-		if end_area:
-			var end_collision = end_area.get_node_or_null("CollisionShape2D")
-			if end_collision:
-				if show_collision_debug:
-					end_collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
-				else:
-					end_collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
 
 # Update anchor properties when changed
 func _update_anchor_properties() -> void:
@@ -479,14 +407,8 @@ func _setup_interaction_areas() -> void:
 		
 		collision.shape = shape
 		
-		# Set debug color if needed
-		if show_interaction_areas:
-			collision.debug_color = Color(0.2, 0.8, 0.2, 0.3)  # Light green, very transparent
-		else:
-			collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
-		
-		area.add_child(collision)
-		add_child(area)
+		area.add_child.call_deferred(collision)
+		add_child.call_deferred(area)
 		
 		# Connect mouse signals
 		area.mouse_entered.connect(_on_segment_mouse_entered.bind(i))
@@ -509,12 +431,6 @@ func _update_interaction_areas() -> void:
 			var shape = collision.shape as CapsuleShape2D
 			shape.radius = interaction_width / 2.0
 			_update_segment_area_shape(i, shape, collision)
-			
-			# Update debug color
-			if show_interaction_areas:
-				collision.debug_color = Color(0.2, 0.8, 0.2, 0.3)
-			else:
-				collision.debug_color = Color(0, 0, 0, 0)
 
 # Update a single segment area's shape and position
 func _update_segment_area_shape(segment_index: int, shape: CapsuleShape2D, collision: CollisionShape2D) -> void:
@@ -538,16 +454,6 @@ func _update_segment_area_shape(segment_index: int, shape: CapsuleShape2D, colli
 	
 	# Rotate the collision shape to match the segment angle
 	collision.rotation = segment_angle
-
-# Update visibility of interaction areas
-func _update_interaction_areas_visibility() -> void:
-	for area in _segment_areas:
-		var collision = area.get_node_or_null("CollisionShape2D")
-		if collision:
-			if show_interaction_areas:
-				collision.debug_color = Color(0.2, 0.8, 0.2, 0.3)
-			else:
-				collision.debug_color = Color(0, 0, 0, 0)
 
 # Property change handler
 func _notification(what: int) -> void:
@@ -589,18 +495,6 @@ func _set(property: StringName, value) -> bool:
 			_end_node.set("color", value)
 		queue_redraw()
 		return true
-	elif property == "show_anchors":
-		_update_anchor_debug_visualization()
-		queue_redraw()
-		return true
-	elif property == "show_anchor_shapes":
-		_update_anchor_visualization()
-		queue_redraw()
-		return true
-	elif property == "show_collision_debug":
-		_update_collision_debug_visualization()
-		queue_redraw()
-		return true
 	elif property == "dynamic_start_anchor" or property == "dynamic_end_anchor":
 		_update_segment_lock_states()
 		return true
@@ -609,9 +503,6 @@ func _set(property: StringName, value) -> bool:
 		return true
 	elif property == "interaction_width":
 		_update_interaction_areas()
-		return true
-	elif property == "show_interaction_areas":
-		_update_interaction_areas_visibility()
 		return true
 	return false
 
