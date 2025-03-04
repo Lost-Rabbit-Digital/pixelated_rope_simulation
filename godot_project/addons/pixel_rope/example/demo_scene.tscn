@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://3xv28xdk5fcv"]
+[gd_scene load_steps=7 format=3 uid="uid://3xv28xdk5fcv"]
 
 [ext_resource type="Script" uid="uid://n6l6bwfnbar6" path="res://addons/pixel_rope/scripts/nodes/rope_anchor.gd" id="2_jndiu"]
 [ext_resource type="Script" uid="uid://4kshuq8vtrsw" path="res://addons/pixel_rope/scripts/nodes/rope_node.gd" id="2_sjcm7"]
@@ -8,6 +8,8 @@ radius = 8.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_sjcm7"]
 radius = 8.0
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_jndiu"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sjcm7"]
 size = Vector2(1280, 25)
@@ -51,6 +53,7 @@ offset_bottom = 720.0
 color = Color(0.369408, 0.633659, 0.678473, 1)
 
 [node name="StaticBody2D" type="StaticBody2D" parent="Interactables/Ground"]
+physics_material_override = SubResource("PhysicsMaterial_jndiu")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Interactables/Ground/StaticBody2D"]
 position = Vector2(640, 12.5)

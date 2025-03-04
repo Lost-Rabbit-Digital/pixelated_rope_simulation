@@ -216,7 +216,6 @@ func _setup_collision_detection() -> void:
 	if not enable_collisions:
 		return
 	
-	# We'll set up the shapes immediately, but defer the space state acquisition
 	# Clear any existing collision shapes
 	_segment_collision_shapes.clear()
 	
@@ -233,7 +232,6 @@ func _setup_collision_detection() -> void:
 	_collision_query.margin = 2.0  # Small margin to improve collision detection
 	
 	# Schedule the physics state acquisition for the next frame
-	# This ensures the world is properly set up
 	call_deferred("_initialize_physics_state")
 	
 	print("PixelRope: Collision detection prepared")
@@ -725,46 +723,56 @@ func _handle_collisions() -> void:
 		_collision_query.shape = _segment_collision_shapes[i]
 		_collision_query.transform = Transform2D(0, segment.position)
 		
-		# Perform the collision query with safety check
-		var collisions = _physics_direct_state.intersect_shape(_collision_query, 1)
+		# Instead of intersect_shape, use get_rest_info which returns position and normal
+		var rest_info = _physics_direct_state.get_rest_info(_collision_query)
 		
-		if not collisions.is_empty():
-			var collision = collisions[0]
+		# Check if we have any collision data
+		if rest_info.is_empty():
+			continue
+		
+		# For get_rest_info, position is called "point"
+		if not rest_info.has("point") or not rest_info.has("normal"):
+			print("Warning: Collision is missing required data")
+			continue
+		
+		# Extract the required values
+		var collision_point = rest_info["point"]
+		var collision_normal = rest_info["normal"]
+		
+		# Store collision data for debugging
+		_last_collisions[i] = {
+			"position": collision_point,
+			"normal": collision_normal
+		}
+		
+		# Calculate collision response
+		var penetration_depth = collision_radius - (segment.position - collision_point).length()
+		if penetration_depth > 0:
+			# Movement vector
+			var movement_vec = segment.position - segment.old_position
 			
-			# Store collision data for debugging
-			_last_collisions[i] = {
-				"position": collision.point,
-				"normal": collision.normal
-			}
+			# Calculate reflection vector
+			var reflection = movement_vec.bounce(collision_normal)
 			
-			# Calculate collision response
-			var penetration_depth = collision_radius - (segment.position - collision.point).length()
-			if penetration_depth > 0:
-				# Movement vector
-				var movement_vec = segment.position - segment.old_position
-				
-				# Calculate reflection vector
-				var reflection = movement_vec.bounce(collision.normal)
-				
-				# Apply bounce and friction
-				var velocity = reflection * collision_bounce
-				
-				# Calculate friction - apply to the component parallel to the surface
-				var normal_component = collision.normal * velocity.dot(collision.normal)
-				var tangent_component = velocity - normal_component
-				tangent_component *= (1.0 - collision_friction)
-				
-				# Final velocity after friction
-				velocity = normal_component + tangent_component
-				
-				# Move the segment out of collision
-				segment.position = collision.point + (collision.normal * (collision_radius + 0.1))
-				
-				# Update old position to reflect bounce
-				segment.old_position = segment.position - velocity
-				
-				# Update segment in the array
-				_segments[i] = segment
+			# Apply bounce and friction
+			var velocity = reflection * collision_bounce
+			
+			# Calculate friction - apply to the component parallel to the surface
+			var normal_component = collision_normal * velocity.dot(collision_normal)
+			var tangent_component = velocity - normal_component
+			tangent_component *= (1.0 - collision_friction)
+			
+			# Final velocity after friction
+			velocity = normal_component + tangent_component
+			
+			# Move the segment out of collision
+			segment.position = collision_point + (collision_normal * (collision_radius + 0.1))
+			
+			# Update old position to reflect bounce
+			segment.old_position = segment.position - velocity
+			
+			# Update segment in the array
+			_segments[i] = segment
 
 # Called every physics frame
 func _physics_process(delta: float) -> void:
@@ -1010,8 +1018,10 @@ func _draw_collision_debug() -> void:
 		# Draw contact points if any
 		if _last_collisions.has(i):
 			var collision_data = _last_collisions[i]
-			var contact_point = to_local(collision_data.position)
-			var normal = collision_data.normal * 10.0
+			
+			# Use dictionary access for position and normal
+			var contact_point = to_local(collision_data["position"])
+			var normal = collision_data["normal"] * 10.0
 			
 			# Draw contact point
 			draw_circle(contact_point, 2.0, Color.RED)

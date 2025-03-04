@@ -7,7 +7,7 @@
 [Boden McHale](https://www.bodenmchale.com/)
 
 # Community Help
-Thank you to those who requested features, pointed out bugs, and helped motivate me to create this plugin.
+Thank you to those who requested features, pointed out bugs, and helped to motivate me to create this plugin.
 
 ## Feature Requests
 ### Tangle System
