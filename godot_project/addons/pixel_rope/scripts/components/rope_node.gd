@@ -188,8 +188,8 @@ func _ready() -> void:
 		func(): rope_released.emit()
 	)
 	
-	# Create anchor nodes if needed
-	_ensure_anchor_nodes()
+	# Use call_deferred to ensure proper parenting and initialization
+	call_deferred("_setup_anchor_nodes")
 	
 	# Initialize editor tracking variables and setup timer if in editor
 	if _editor_mode and _start_node and _end_node:
@@ -226,6 +226,60 @@ func _ready() -> void:
 		show_collision_debug
 	)
 
+func _setup_anchor_nodes() -> void:
+	# Create or fetch anchor nodes safely
+	_ensure_anchor_nodes()
+	
+	# Connect to parent change signal to handle reparenting
+	if not is_connected("tree_entered", _on_tree_entered):
+		tree_entered.connect(_on_tree_entered)
+	
+	if not is_connected("tree_exiting", _on_tree_exiting):
+		tree_exiting.connect(_on_tree_exiting)
+	
+	# Safely reconnect anchor signals
+	_reconnect_anchor_signals()
+
+# Handle when the node enters the scene tree
+func _on_tree_entered() -> void:
+	# Reparent might have occurred, so reconnect signals
+	call_deferred("_reconnect_anchor_signals")
+
+# Handle when the node is exiting the scene tree
+func _on_tree_exiting() -> void:
+	# Disconnect signals to prevent errors during reparenting
+	_disconnect_anchor_signals()
+	
+# Disconnect anchor signals safely
+func _disconnect_anchor_signals() -> void:
+	if _start_node is RopeAnchor:
+		if _start_node.position_changed.is_connected(_on_anchor_position_changed):
+			_start_node.position_changed.disconnect(_on_anchor_position_changed)
+	
+	if _end_node is RopeAnchor:
+		if _end_node.position_changed.is_connected(_on_anchor_position_changed):
+			_end_node.position_changed.disconnect(_on_anchor_position_changed)
+
+# Reconnect anchor signals safely
+func _reconnect_anchor_signals() -> void:
+	if not is_inside_tree():
+		return
+	
+	# Reconnect start anchor
+	if _start_node is RopeAnchor:
+		_disconnect_from_signal(_start_node.position_changed, _on_anchor_position_changed)
+		_start_node.position_changed.connect(_on_anchor_position_changed.bind(_start_node))
+	
+	# Reconnect end anchor
+	if _end_node is RopeAnchor:
+		_disconnect_from_signal(_end_node.position_changed, _on_anchor_position_changed)
+		_end_node.position_changed.connect(_on_anchor_position_changed.bind(_end_node))
+
+# Utility method to safely disconnect a signal if connected
+func _disconnect_from_signal(signal_obj: Signal, method: Callable) -> void:
+	if signal_obj.is_connected(method):
+		signal_obj.disconnect(method)
+
 func _setup_editor_updates() -> void:
 	# Cancel existing timer
 	if _editor_timer and not _editor_timer.is_queued_for_deletion():
@@ -258,7 +312,7 @@ func _check_for_anchor_movement() -> void:
 
 # Create and set up anchor nodes
 func _ensure_anchor_nodes() -> void:
-	# Handle start anchor
+	# Safely create or fetch anchor nodes
 	_start_node = get_node_or_null("StartAnchor") 
 	if not _start_node:
 		_start_node = _create_anchor_node("StartAnchor", start_position)
@@ -267,12 +321,8 @@ func _ensure_anchor_nodes() -> void:
 		_start_node.position = start_position
 		if _start_node is RopeAnchor:
 			_update_anchor_node_properties(_start_node)
-			# Safely disconnect and reconnect signal to prevent duplicates
-			if _start_node.position_changed.is_connected(_on_anchor_position_changed):
-				_start_node.position_changed.disconnect(_on_anchor_position_changed)
-			_start_node.position_changed.connect(_on_anchor_position_changed.bind(_start_node))
 	
-	# Handle end anchor
+	# Handle end anchor similarly
 	_end_node = get_node_or_null("EndAnchor")
 	if not _end_node:
 		_end_node = _create_anchor_node("EndAnchor", end_position)
@@ -318,22 +368,6 @@ func _notification(what: int) -> void:
 			# When the node gets a new parent, we need to ensure signals are properly connected
 			if not Engine.is_editor_hint():
 				call_deferred("_reconnect_anchor_signals")
-
-func _reconnect_anchor_signals() -> void:
-	if not is_inside_tree():
-		return
-		
-	# Reconnect start anchor
-	if _start_node is RopeAnchor:
-		if _start_node.position_changed.is_connected(_on_anchor_position_changed):
-			_start_node.position_changed.disconnect(_on_anchor_position_changed)
-		_start_node.position_changed.connect(_on_anchor_position_changed.bind(_start_node))
-	
-	# Reconnect end anchor
-	if _end_node is RopeAnchor:
-		if _end_node.position_changed.is_connected(_on_anchor_position_changed):
-			_end_node.position_changed.disconnect(_on_anchor_position_changed)
-		_end_node.position_changed.connect(_on_anchor_position_changed.bind(_end_node))
 
 # Handle anchor position change signal
 func _on_anchor_position_changed(anchor: RopeAnchor) -> void:
