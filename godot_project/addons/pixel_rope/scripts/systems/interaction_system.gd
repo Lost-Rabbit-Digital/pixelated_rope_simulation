@@ -68,8 +68,8 @@ static func setup_interaction_areas(
 		else:
 			collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
 		
-		area.add_child.call_deferred(collision)
-		rope_node.add_child.call_deferred(area)
+		area.add_child(collision)
+		rope_node.add_child(area)
 		
 		# Store index in a way we can retrieve it
 		area.set_meta("segment_index", i)
@@ -186,5 +186,5 @@ static func setup_draggable_node(end_node: Node2D) -> void:
 		var shape = CircleShape2D.new()
 		shape.radius = 15.0  # Larger hitbox
 		collision.shape = shape
-		area.add_child.call_deferred(collision)
-		end_node.add_child.call_deferred(area)
+		area.add_child(collision)
+		end_node.add_child(area)
