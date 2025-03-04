@@ -1,97 +1,169 @@
 @tool
 @icon("res://addons/pixel_rope/icons/CircleShape2D.svg")
-## An interactive anchor point for rope connections
+## An optimized anchor point for PixelRope connections
 ##
-## Creates a circular node that serves as an attachment point for PixelRope instances.
-## Features adjustable radius and color, with built-in collision detection for
-## interaction. Automatically sets up required physics components on creation.
+## Creates a minimalist, editor-friendly anchor point that can be positioned
+## through direct dragging in the editor. Displays only a debug collision shape
+## and efficiently communicates position changes to the parent rope.
 class_name RopeAnchor
 extends Node2D
 
+## Signal emitted when the anchor position changes in the editor
+signal position_changed
+
+## Radius of the anchor's collision detection area
 @export var radius: float = 8.0:
 	set(value):
 		radius = value
 		_update_collision_shape()
-		queue_redraw()
 
-@export var color: Color = Color.WHITE:
+## Color of the debug visualization (only affects collision shape)
+@export var debug_color: Color = Color(0.7, 0.7, 1.0, 0.5):
 	set(value):
-		color = value
-		queue_redraw()
+		debug_color = value
+		_update_debug_visualization()
 
-# Add a property to control whether to draw the circle or not
-@export var visible_shape: bool = false:
+## Whether to show the collision debug shape
+@export var show_debug_shape: bool = true:
 	set(value):
-		visible_shape = value
-		queue_redraw()
+		show_debug_shape = value
+		_update_debug_visualization()
 
+# Editor and runtime tracking variables
 var _last_position: Vector2
-var _editor_mode: bool = false
+var _is_editor: bool = false
+var _is_initialized: bool = false
+var _dragging: bool = false
+var _drag_offset: Vector2
 
 func _ready() -> void:
-	# Check if we're in the editor
-	_editor_mode = Engine.is_editor_hint()
+	# Check if running in the editor
+	_is_editor = Engine.is_editor_hint()
 	
-	# Store initial position
+	# Store initial position for change detection
 	_last_position = position
 	
-	# Make sure we have an Area2D for interaction
-	if not has_node("Area2D"):
-		var area = Area2D.new()
-		area.name = "Area2D"
-		
-		var collision = CollisionShape2D.new()
-		collision.name = "CollisionShape2D"
-		
-		var shape = CircleShape2D.new()
-		shape.radius = radius
-		
-		collision.shape = shape
-		# Enable debug draw on the collision shape
-		collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
-		
-		area.add_child.call_deferred(collision)
-		add_child.call_deferred(area)
-		
-		if _editor_mode and get_tree().edited_scene_root:
-			area.owner = get_tree().edited_scene_root
-			collision.owner = get_tree().edited_scene_root
-	else:
-		# Update existing shape
-		_update_collision_shape()
-		
-		# Enable debug visualization on existing collision shape
-		var area = get_node_or_null("Area2D")
-		if area:
-			var collision = area.get_node_or_null("CollisionShape2D")
-			if collision:
-				collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
+	# Setup the collision area in a deferred way to avoid errors
+	_setup_collision_area()
+	
+	_is_initialized = true
 
-func _draw() -> void:
-	# Only draw the circle if visible_shape is true
-	if visible_shape:
-		draw_circle(Vector2.ZERO, radius, color)
+func _setup_collision_area() -> void:
+	# Check if the Area2D already exists
+	if has_node("Area2D"):
+		# Just update existing components
+		_update_collision_shape()
+		_update_debug_visualization()
+		return
+		
+	# Create Area2D for interaction
+	var area = Area2D.new()
+	area.name = "Area2D"
+	
+	# Create collision shape
+	var collision = CollisionShape2D.new()
+	collision.name = "CollisionShape2D"
+	
+	# Create circle shape
+	var shape = CircleShape2D.new()
+	shape.radius = radius
+	collision.shape = shape
+	
+	# Set debug color
+	if show_debug_shape:
+		collision.debug_color = debug_color
+	else:
+		collision.debug_color = Color(0, 0, 0, 0)
+	
+	# Add child nodes
+	area.add_child(collision)
+	add_child(area)
+	
+	# Set ownership if in edited scene
+	if _is_editor and get_tree().edited_scene_root:
+		area.owner = get_tree().edited_scene_root
+		collision.owner = get_tree().edited_scene_root
 
 func _update_collision_shape() -> void:
+	if not _is_initialized:
+		return
+		
 	var area = get_node_or_null("Area2D")
-	if area:
-		var collision = area.get_node_or_null("CollisionShape2D")
-		if collision and collision.shape is CircleShape2D:
-			collision.shape.radius = radius
-			# Make sure debug draw is enabled
-			collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)
+	if not area:
+		return
+		
+	var collision = area.get_node_or_null("CollisionShape2D")
+	if not collision or not collision.shape is CircleShape2D:
+		return
+		
+	collision.shape.radius = radius
+
+func _update_debug_visualization() -> void:
+	if not _is_initialized:
+		return
+		
+	var area = get_node_or_null("Area2D")
+	if not area:
+		return
+		
+	var collision = area.get_node_or_null("CollisionShape2D")
+	if not collision:
+		return
+		
+	if show_debug_shape:
+		collision.debug_color = debug_color
+	else:
+		collision.debug_color = Color(0, 0, 0, 0)
 
 func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_TRANSFORM_CHANGED:
-			# Position has changed, notify parent if in editor
-			if _editor_mode and position != _last_position:
+			if _is_editor and position != _last_position and not _dragging:
 				_last_position = position
 				_notify_parent_of_movement()
+
+# Handle mouse input for dragging in the editor
+func _input(event: InputEvent) -> void:
+	if not _is_editor:
+		return
 	
+	# Handle mouse actions only within the editor viewport
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		var area = get_node_or_null("Area2D")
+		if not area:
+			return
+			
+		# Calculate global mouse position in viewport
+		var global_mouse_pos = get_viewport().get_canvas_transform().affine_inverse() * event.position
+		
+		# Test if the click is within our shape radius
+		var distance = global_mouse_pos.distance_to(global_position)
+		
+		if event.pressed:
+			# Start dragging if mouse is over the anchor
+			if distance <= radius:
+				_dragging = true
+				_drag_offset = global_position - global_mouse_pos
+				get_viewport().set_input_as_handled()
+		else:
+			# Stop dragging
+			if _dragging:
+				_dragging = false
+				_notify_parent_of_movement()
+				get_viewport().set_input_as_handled()
+	
+	# Handle dragging motion
+	elif event is InputEventMouseMotion and _dragging:
+		var global_mouse_pos = get_viewport().get_canvas_transform().affine_inverse() * event.position
+		# Update position with the original offset to maintain grab point
+		global_position = global_mouse_pos + _drag_offset
+		_last_position = position
+		_notify_parent_of_movement()
+		get_viewport().set_input_as_handled()
+
 # Notify the parent rope of position changes
 func _notify_parent_of_movement() -> void:
-	if not _editor_mode:
+	if not _is_editor:
 		return
 		
 	var parent = get_parent()
@@ -104,9 +176,10 @@ func _notify_parent_of_movement() -> void:
 			
 		# Force a redraw
 		parent.queue_redraw()
+		# Emit signal for potential listeners
+		position_changed.emit()
 
-# This is called in the editor when moving the node
-func _process(_delta: float) -> void:
-	if _editor_mode and position != _last_position:
-		_last_position = position
-		_notify_parent_of_movement()
+# This prevents the editor from grabbing the node when we're handling the drag
+func _get_configuration_warnings() -> PackedStringArray:
+	# Return empty array to keep the node "valid"
+	return []

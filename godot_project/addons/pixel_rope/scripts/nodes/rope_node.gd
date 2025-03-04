@@ -98,12 +98,17 @@ enum GrabMode {
 		if Engine.is_editor_hint():
 			queue_redraw()
 
-@export var anchor_color: Color = Color.WHITE:
+@export var anchor_debug_color: Color = Color(0.7, 0.7, 1.0, 0.5):
 	set(value):
-		anchor_color = value
+		anchor_debug_color = value
 		_update_anchor_properties()
 		if Engine.is_editor_hint():
 			queue_redraw()
+
+@export var show_anchor_debug: bool = true:
+	set(value):
+		show_anchor_debug = value
+		_update_anchor_debug_visualization()
 
 # New properties for dynamic anchors
 @export_group("Dynamic Anchors")
@@ -151,7 +156,7 @@ enum GrabMode {
 @export var show_anchors: bool = true:
 	set(value):
 		show_anchors = value
-		_update_anchor_visibility()
+		_update_anchor_debug_visualization()
 
 @export var show_anchor_shapes: bool = false:
 	set(value):
@@ -200,7 +205,7 @@ func _ready() -> void:
 	_ensure_anchor_nodes()
 	
 	# Update anchor visibility and visualization
-	_update_anchor_visibility()
+	_update_anchor_debug_visualization()
 	_update_anchor_visualization()
 	_update_collision_debug_visualization()
 	
@@ -260,74 +265,59 @@ func _check_for_anchor_movement() -> void:
 	# Set up next timer
 	_setup_editor_updates()
 
-# Ensure anchor nodes exist and are positioned correctly
 func _ensure_anchor_nodes() -> void:
 	# Handle start anchor
-	_start_node = get_node_or_null("StartAnchor")
+	_start_node = get_node_or_null("StartAnchor") 
 	if not _start_node:
 		_start_node = _create_anchor_node("StartAnchor", start_position)
 	else:
+		# Make sure existing node has correct position
 		_start_node.position = start_position
+		# Connect signal if not already connected
+		if _start_node is RopeAnchor and not _start_node.position_changed.is_connected(_on_anchor_position_changed):
+			_start_node.position_changed.connect(_on_anchor_position_changed.bind(_start_node))
 	
 	# Handle end anchor
 	_end_node = get_node_or_null("EndAnchor")
 	if not _end_node:
 		_end_node = _create_anchor_node("EndAnchor", end_position)
 	else:
+		# Make sure existing node has correct position
 		_end_node.position = end_position
+		# Connect signal if not already connected
+		if _end_node is RopeAnchor and not _end_node.position_changed.is_connected(_on_anchor_position_changed):
+			_end_node.position_changed.connect(_on_anchor_position_changed.bind(_end_node))
 
 # Create a new anchor node
 func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
-	var anchor = Node2D.new()
+	var anchor = RopeAnchor.new()
 	anchor.name = node_name
 	anchor.position = position
-	anchor.set_script(load("res://addons/pixel_rope/scripts/nodes/rope_anchor.gd"))
 	
 	# Set properties
-	if anchor.has_method("set") and anchor.get_script():
-		anchor.set("radius", anchor_radius)
-		anchor.set("color", anchor_color)
-		anchor.set("visible_shape", show_anchor_shapes)
+	anchor.radius = anchor_radius
+	anchor.debug_color = anchor_debug_color
+	anchor.show_debug_shape = show_anchor_debug
 	
-	# Create Area2D
-	var area = Area2D.new()
-	area.name = "Area2D"
+	# Connect position change signal
+	anchor.position_changed.connect(_on_anchor_position_changed.bind(anchor))
 	
-	var collision = CollisionShape2D.new()
-	collision.name = "CollisionShape2D"
-	
-	var shape = CircleShape2D.new()
-	shape.radius = anchor_radius
-	
-	collision.shape = shape
-	
-	# Set debug color based on show_collision_debug setting
-	if show_collision_debug:
-		collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
-	else:
-		collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
-	
-	area.add_child.call_deferred(collision)
-	anchor.add_child.call_deferred(area)
-	
-	add_child.call_deferred(anchor)
+	add_child(anchor)
 	
 	# If this is being run in the editor, ensure the node is properly set up
-	if Engine.is_editor_hint():
-		# Mark the node as needing to be saved
+	if Engine.is_editor_hint() and get_tree().edited_scene_root:
 		anchor.owner = get_tree().edited_scene_root
-		area.owner = get_tree().edited_scene_root
-		collision.owner = get_tree().edited_scene_root
 	
 	return anchor
 
+
 # Update anchor visibility based on show_anchors property
-func _update_anchor_visibility() -> void:
-	if _start_node and _start_node.has_method("set"):
-		_start_node.set("visible", show_anchors)
+func _update_anchor_debug_visualization() -> void:
+	if _start_node and _start_node is RopeAnchor:
+		_start_node.show_debug_shape = show_anchor_debug
 	
-	if _end_node and _end_node.has_method("set"):
-		_end_node.set("visible", show_anchors)
+	if _end_node and _end_node is RopeAnchor:
+		_end_node.show_debug_shape = show_anchor_debug
 
 # Update anchor visualization (showing/hiding drawn shapes)
 func _update_anchor_visualization() -> void:
@@ -361,13 +351,20 @@ func _update_collision_debug_visualization() -> void:
 
 # Update anchor properties when changed
 func _update_anchor_properties() -> void:
-	if _start_node and _start_node.has_method("set"):
-		_start_node.set("radius", anchor_radius)
-		_start_node.set("color", anchor_color)
+	if _start_node and _start_node is RopeAnchor:
+		_start_node.radius = anchor_radius
+		_start_node.debug_color = anchor_debug_color
 	
-	if _end_node and _end_node.has_method("set"):
-		_end_node.set("radius", anchor_radius)
-		_end_node.set("color", anchor_color)
+	if _end_node and _end_node is RopeAnchor:
+		_end_node.radius = anchor_radius
+		_end_node.debug_color = anchor_debug_color
+
+func _on_anchor_position_changed(anchor: RopeAnchor) -> void:
+	if anchor.name == "StartAnchor":
+		start_position = anchor.position
+	elif anchor.name == "EndAnchor":
+		end_position = anchor.position
+	queue_redraw()
 
 # Set up a node to be draggable
 func _setup_draggable_node(node: Node2D) -> void:
@@ -593,7 +590,7 @@ func _set(property: StringName, value) -> bool:
 		queue_redraw()
 		return true
 	elif property == "show_anchors":
-		_update_anchor_visibility()
+		_update_anchor_debug_visualization()
 		queue_redraw()
 		return true
 	elif property == "show_anchor_shapes":

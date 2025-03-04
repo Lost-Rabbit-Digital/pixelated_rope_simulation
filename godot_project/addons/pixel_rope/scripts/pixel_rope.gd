@@ -12,8 +12,10 @@ const rope_node_script = preload("res://addons/pixel_rope/scripts/nodes/rope_nod
 const rope_anchor_script = preload("res://addons/pixel_rope/scripts/nodes/rope_anchor.gd")
 const line_algorithms = preload("res://addons/pixel_rope/scripts/utils/line_algorithms.gd")
 
-# Inspector plugin for handling property changes
-var inspector_plugin
+# Editor gizmo and selection tracking
+var _editor_selection: EditorSelection
+var _current_selected_rope: PixelRope = null
+var _current_selected_anchor: RopeAnchor = null
 
 func _enter_tree() -> void:
 	# Add custom types with icons
@@ -31,9 +33,9 @@ func _enter_tree() -> void:
 		preload("res://addons/pixel_rope/icons/CircleShape2D.svg")
 	)
 	
-	# Create and add the inspector plugin
-	inspector_plugin = RopeInspectorPlugin.new()
-	add_inspector_plugin(inspector_plugin)
+	# Get editor selection
+	_editor_selection = get_editor_interface().get_selection()
+	_editor_selection.selection_changed.connect(_on_editor_selection_changed)
 	
 	print("PixelRope plugin initialized")
 
@@ -42,53 +44,48 @@ func _exit_tree() -> void:
 	remove_custom_type("PixelRope")
 	remove_custom_type("RopeAnchor")
 	
-	# Remove the inspector plugin
-	remove_inspector_plugin(inspector_plugin)
+	# Disconnect selection tracking
+	if _editor_selection and _editor_selection.selection_changed.is_connected(_on_editor_selection_changed):
+		_editor_selection.selection_changed.disconnect(_on_editor_selection_changed)
 	
 	print("PixelRope plugin disabled")
 
 # Handle selection changes in the editor
-func _edit(object) -> void:
-	if object is PixelRope:
-		# Force a redraw when selected
-		object.queue_redraw()
-
-# Custom inspector plugin to catch property changes
-class RopeInspectorPlugin extends EditorInspectorPlugin:
-	func _can_handle(object) -> bool:
-		return object is PixelRope or object is RopeAnchor
+func _on_editor_selection_changed() -> void:
+	var selected = _editor_selection.get_selected_nodes()
 	
-	func _parse_property(object, type, name, hint_type, hint_string, usage_flags, wide) -> bool:
-		# Add a callback for rope-related properties
-		if object is PixelRope:
-			var rope_properties = ["start_position", "end_position", "pixel_size", "pixel_spacing", 
-								  "segment_count", "segment_length", "rope_color", "line_algorithm"]
-			if rope_properties.has(name):
-				# Connect to property signals the standard way
-				var property = object.get_property_list().filter(func(p): return p.name == name)[0]
-				property.connect("changed", Callable(object, "queue_redraw"))
-		
-		# Also handle anchor properties
-		if object is RopeAnchor:
-			var anchor_properties = ["position"]
-			if anchor_properties.has(name):
-				# Instead of using the callback, we'll connect to signals directly
-				if object.is_connected("position_changed", Callable(object, "_notify_parent_of_movement")):
-					pass
-				else:
-					object.connect("position_changed", Callable(object, "_notify_parent_of_movement"))
-		
-		# Return false to let the default inspector handle the property
-		return false
+	# Clear current selections
+	_current_selected_rope = null
+	_current_selected_anchor = null
+	
+	if selected.size() == 1:
+		if selected[0] is PixelRope:
+			_current_selected_rope = selected[0]
+			# Force a redraw when selected
+			_current_selected_rope.queue_redraw()
+		elif selected[0] is RopeAnchor:
+			_current_selected_anchor = selected[0]
+			
+			# Find parent rope if any
+			var parent = _current_selected_anchor.get_parent()
+			if parent is PixelRope:
+				_current_selected_rope = parent
+				_current_selected_rope.queue_redraw()
 
-# Property change callback for PixelRope
-static func _on_property_changed(property, value, object, _edited_property) -> void:
-	# Queue a redraw to update the rope
-	object.queue_redraw()
+# Forward input events to allow custom handling in the editor
+func _forward_canvas_gui_input(event: InputEvent) -> bool:
+	# Check if we have an anchor selected, and if so, let it handle the input
+	if _current_selected_anchor and _current_selected_anchor.input(event):
+		return true
+	
+	# If not handled by an anchor, check if we have a rope selected
+	if _current_selected_rope:
+		# Forward input to rope (if it can handle it)
+		if _current_selected_rope.has_method("_editor_input"):
+			return _current_selected_rope._editor_input(event)
+	
+	return false
 
-# Position change callback for RopeAnchor
-static func _on_position_changed(property, value, object, _edited_property) -> void:
-	# Find the parent PixelRope and force a redraw
-	var parent = object.get_parent()
-	if parent is PixelRope:
-		parent.queue_redraw()
+# Optionally add custom editor toolbar 
+func _has_main_screen() -> bool:
+	return false
