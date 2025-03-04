@@ -9,6 +9,7 @@ Current Features:
 	- Moveable anchors
 	- Dynamic color
 	- Live updating while in-editor 
+	- Option to disable kinematic on anchors 
 
 Requested features:
 	- RigidBody2D https://bsky.app/profile/atropos148.bsky.social/post/3ljhccxiiyc2g
@@ -18,12 +19,12 @@ Requested features:
 To-do:
 	- Implement optional collisions
 	- Implement optional tangle system
-	- Add option to disable kinematic on EndAnchor
-	- Display rope in-editor while moving anchors
-	- Use anchor position from editor instead of hardcoded in PixelRope
 	- Figure out graphics, perhaps a gradient? 
-	- Add MIT license, or similar
+	- Change to MPL 2.0 license
 
 Completed:
 	- Turn into plugin
 	- Create example scene
+	- Use anchor position from editor instead of hardcoded in PixelRope
+	- Display rope in-editor while moving anchors
+	- Add option to disable kinematic on EndAnchor

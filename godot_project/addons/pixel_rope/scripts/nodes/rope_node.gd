@@ -34,14 +34,14 @@ enum RopeState {
 		if Engine.is_editor_hint():
 			queue_redraw()
 
-@export var rope_color: Color = Color(1.0, 0.722, 0.016):
+@export var rope_color: Color = Color(0.8, 0.6, 0.2):
 	set(value):
 		rope_color = value
 		if Engine.is_editor_hint():
 			queue_redraw()
 
 @export_group("Pixelation Properties")
-@export var pixel_size: int = 4:
+@export var pixel_size: int = 8:
 	set(value):
 		pixel_size = value
 		if Engine.is_editor_hint():
@@ -99,10 +99,33 @@ enum RopeState {
 
 @export var end_anchor_draggable: bool = true
 
-@export_group("Anchor Visualization")
-@export var toggle_anchors: bool = true:
+# New properties for dynamic anchors
+@export_group("Dynamic Anchors")
+## Makes the start anchor dynamic (affected by physics forces)
+@export var dynamic_start_anchor: bool = false:
 	set(value):
-		toggle_anchors = value
+		dynamic_start_anchor = value
+		_update_segment_lock_states()
+
+## Makes the end anchor dynamic (affected by physics forces)
+@export var dynamic_end_anchor: bool = false:
+	set(value):
+		dynamic_end_anchor = value
+		_update_segment_lock_states()
+
+## Mass factor for dynamic anchors (affects how strongly forces act on them)
+@export_range(0.1, 10.0) var anchor_mass: float = 1.0
+
+## Applies a small random force to dynamic anchors each frame for more natural movement
+@export var anchor_jitter: float = 0.0
+
+## Optional custom gravity for dynamic anchors that overrides the main gravity
+@export var anchor_gravity: Vector2 = Vector2.ZERO
+
+@export_group("Anchor Visualization")
+@export var show_anchors: bool = true:
+	set(value):
+		show_anchors = value
 		_update_anchor_visibility()
 
 @export var show_anchor_shapes: bool = false:
@@ -160,7 +183,7 @@ func _ready() -> void:
 		await get_tree().process_frame
 		
 		# Set up interaction for the end anchor if needed
-		if end_anchor_draggable:
+		if end_anchor_draggable and not dynamic_end_anchor:
 			_setup_draggable_node(_end_node)
 		
 		# Initialize the rope
@@ -171,11 +194,11 @@ func _ready() -> void:
 func _setup_editor_updates() -> void:
 	# Cancel any existing timer
 	if _editor_timer and not _editor_timer.is_queued_for_deletion():
-		_editor_timer.disconnect("timeout", Callable(self, "_check_for_anchor_movement"))
+		_editor_timer.timeout.disconnect(_check_for_anchor_movement)
 		
 	# Create a new timer that fires frequently to check for changes
 	_editor_timer = get_tree().create_timer(0.05) # 50ms
-	_editor_timer.connect("timeout", Callable(self, "_check_for_anchor_movement"))
+	_editor_timer.timeout.connect(_check_for_anchor_movement)
 
 # Check if anchors have moved and trigger redraws
 func _check_for_anchor_movement() -> void:
@@ -213,7 +236,6 @@ func _ensure_anchor_nodes() -> void:
 		_end_node = _create_anchor_node("EndAnchor", end_position)
 	else:
 		_end_node.position = end_position
-
 
 # Create a new anchor node
 func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
@@ -260,13 +282,43 @@ func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
 	
 	return anchor
 
-# Update anchor visibility based on toggle_anchors property
+# Update anchor visibility based on show_anchors property
 func _update_anchor_visibility() -> void:
 	if _start_node and _start_node.has_method("set"):
-		_start_node.set("visible", toggle_anchors)
+		_start_node.set("visible", show_anchors)
 	
 	if _end_node and _end_node.has_method("set"):
-		_end_node.set("visible", toggle_anchors)
+		_end_node.set("visible", show_anchors)
+
+# Update anchor visualization (showing/hiding drawn shapes)
+func _update_anchor_visualization() -> void:
+	if _start_node and _start_node.has_method("set"):
+		_start_node.set("visible_shape", show_anchor_shapes)
+	
+	if _end_node and _end_node.has_method("set"):
+		_end_node.set("visible_shape", show_anchor_shapes)
+
+# Update collision debug visualization
+func _update_collision_debug_visualization() -> void:
+	if _start_node:
+		var start_area = _start_node.get_node_or_null("Area2D")
+		if start_area:
+			var start_collision = start_area.get_node_or_null("CollisionShape2D")
+			if start_collision:
+				if show_collision_debug:
+					start_collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
+				else:
+					start_collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
+	
+	if _end_node:
+		var end_area = _end_node.get_node_or_null("Area2D")
+		if end_area:
+			var end_collision = end_area.get_node_or_null("CollisionShape2D")
+			if end_collision:
+				if show_collision_debug:
+					end_collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
+				else:
+					end_collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
 
 # Update anchor properties when changed
 func _update_anchor_properties() -> void:
@@ -321,15 +373,37 @@ func _initialize_rope() -> void:
 	for i in range(segment_count + 1):
 		var pos: Vector2 = _start_node.global_position + step_vector * float(i)
 		
+		# Determine if segment is locked based on dynamic anchor settings
+		var is_locked = false
+		if i == 0:  # Start anchor
+			is_locked = not dynamic_start_anchor
+		elif i == segment_count:  # End anchor
+			is_locked = not dynamic_end_anchor
+		
 		_segments.append({
 			"position": pos,
 			"old_position": pos,
-			"is_locked": (i == 0 or i == segment_count)
+			"is_locked": is_locked,
+			"velocity": Vector2.ZERO,  # For additional physics effects
+			"mass": 1.0 if (i > 0 and i < segment_count) else anchor_mass  # Different mass for anchors
 		})
 	
 	print("PixelRope: Created", _segments.size(), "segments with length", segment_length)
 	_broken = false
 	_state = RopeState.NORMAL
+
+# Update the lock state of segments based on dynamic anchor settings
+func _update_segment_lock_states() -> void:
+	if _segments.is_empty():
+		return
+	
+	# Update start anchor
+	if _segments.size() > 0:
+		_segments[0].is_locked = not dynamic_start_anchor
+	
+	# Update end anchor
+	if _segments.size() > segment_count:
+		_segments[segment_count].is_locked = not dynamic_end_anchor
 
 # Property change handler
 func _notification(what: int) -> void:
@@ -347,48 +421,9 @@ func _notification(what: int) -> void:
 	elif what == NOTIFICATION_TRANSFORM_CHANGED and Engine.is_editor_hint():
 		queue_redraw()
 
-# Update anchor visualization (showing/hiding drawn shapes)
-func _update_anchor_visualization() -> void:
-	if _start_node and _start_node.has_method("set"):
-		_start_node.set("visible_shape", show_anchor_shapes)
-	
-	if _end_node and _end_node.has_method("set"):
-		_end_node.set("visible_shape", show_anchor_shapes)
-
-# Update collision debug visualization
-func _update_collision_debug_visualization() -> void:
-	if _start_node:
-		var start_area = _start_node.get_node_or_null("Area2D")
-		if start_area:
-			var start_collision = start_area.get_node_or_null("CollisionShape2D")
-			if start_collision:
-				if show_collision_debug:
-					start_collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
-				else:
-					start_collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
-	
-	if _end_node:
-		var end_area = _end_node.get_node_or_null("Area2D")
-		if end_area:
-			var end_collision = end_area.get_node_or_null("CollisionShape2D")
-			if end_collision:
-				if show_collision_debug:
-					end_collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
-				else:
-					end_collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
-
 # Handle property changes in editor
 func _set(property: StringName, value) -> bool:
-	if property == "toggle_anchors":
-		_update_anchor_visibility()
-		return true
-	elif property == "show_anchor_shapes":
-		_update_anchor_visualization()
-		return true
-	elif property == "show_collision_debug":
-		_update_collision_debug_visualization()
-		return true
-	elif property == "start_position" and _start_node:
+	if property == "start_position" and _start_node:
 		_start_node.position = value
 		queue_redraw()
 		return true
@@ -410,9 +445,20 @@ func _set(property: StringName, value) -> bool:
 			_end_node.set("color", value)
 		queue_redraw()
 		return true
-	elif property == "toggle_anchors":
+	elif property == "show_anchors":
 		_update_anchor_visibility()
 		queue_redraw()
+		return true
+	elif property == "show_anchor_shapes":
+		_update_anchor_visualization()
+		queue_redraw()
+		return true
+	elif property == "show_collision_debug":
+		_update_collision_debug_visualization()
+		queue_redraw()
+		return true
+	elif property == "dynamic_start_anchor" or property == "dynamic_end_anchor":
+		_update_segment_lock_states()
 		return true
 	return false
 
@@ -453,21 +499,32 @@ func _physics_process(delta: float) -> void:
 	if not _initialized or _segments.is_empty():
 		return
 	
-	# Handle dragging of end node - keep this active even when broken
-	if _is_dragging:
+	# Handle dragging of end node - only if it's not dynamic
+	if _is_dragging and not dynamic_end_anchor:
 		_end_node.global_position = get_global_mouse_position()
+		_segments[segment_count].position = _end_node.global_position
 	
 	# If rope is broken, just request redraw to update the red line
 	if _broken:
 		queue_redraw()
 		return
-		
-	# Update endpoints to match node positions
-	_segments[0].position = _start_node.global_position
-	_segments[segment_count].position = _end_node.global_position
+	
+	# Update start and end positions from nodes if not dynamic
+	if not dynamic_start_anchor:
+		_segments[0].position = _start_node.global_position
+	
+	if not dynamic_end_anchor:
+		_segments[segment_count].position = _end_node.global_position
 	
 	# Apply physics
 	_update_physics(delta)
+	
+	# Update node positions for dynamic anchors
+	if dynamic_start_anchor:
+		_start_node.global_position = _segments[0].position
+	
+	if dynamic_end_anchor:
+		_end_node.global_position = _segments[segment_count].position
 	
 	# Check if rope is stretched too much
 	_check_rope_state()
@@ -483,12 +540,27 @@ func _update_physics(delta: float) -> void:
 		
 		if segment.is_locked:
 			continue
-			
+		
 		var temp: Vector2 = segment.position
 		var velocity: Vector2 = segment.position - segment.old_position
 		
-		# Apply forces
-		segment.position += velocity * damping + gravity * delta * delta
+		# Apply forces based on segment type
+		var segment_gravity = gravity
+		var segment_damping = damping
+		
+		# Use custom gravity for anchors if provided
+		if (i == 0 or i == segment_count) and anchor_gravity != Vector2.ZERO:
+			segment_gravity = anchor_gravity
+		
+		# Apply random jitter to dynamic anchors
+		if anchor_jitter > 0 and (i == 0 or i == segment_count):
+			velocity += Vector2(
+				randf_range(-anchor_jitter, anchor_jitter),
+				randf_range(-anchor_jitter, anchor_jitter)
+			)
+		
+		# Apply forces with mass factoring
+		segment.position += velocity * segment_damping + segment_gravity * delta * delta / segment.mass
 		segment.old_position = temp
 		
 		_segments[i] = segment
@@ -513,13 +585,17 @@ func _apply_constraints() -> void:
 		var percent: float = difference / current_dist
 		var correction: Vector2 = current_vec * percent
 		
-		# Apply position correction
+		# Apply position correction - weight by mass for more realistic movement
+		# of the dynamic anchors compared to regular segments
+		var mass_ratio1 = segment2.mass / (segment1.mass + segment2.mass)
+		var mass_ratio2 = segment1.mass / (segment1.mass + segment2.mass)
+		
 		if not segment1.is_locked:
-			segment1.position -= correction * 0.5
+			segment1.position -= correction * mass_ratio1
 			_segments[i] = segment1
 			
 		if not segment2.is_locked:
-			segment2.position += correction * 0.5
+			segment2.position += correction * mass_ratio2
 			_segments[i + 1] = segment2
 
 # Monitor rope state

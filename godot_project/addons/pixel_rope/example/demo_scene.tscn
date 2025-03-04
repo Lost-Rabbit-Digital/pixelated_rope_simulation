@@ -12,8 +12,11 @@ radius = 8.0
 [node name="MainScene" type="Node2D"]
 
 [node name="PixelRope" type="Node2D" parent="."]
-position = Vector2(353, 206)
+position = Vector2(749, 44)
 script = ExtResource("2_sjcm7")
+segment_length = 10.0
+pixel_size = 4
+anchor_gravity = Vector2(0, -975)
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope"]
