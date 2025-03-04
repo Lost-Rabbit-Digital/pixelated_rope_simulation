@@ -19,6 +19,7 @@ size = Vector2(1280, 25)
 [node name="PixelRope" type="Node2D" parent="."]
 position = Vector2(717, 31)
 script = ExtResource("2_sjcm7")
+end_position = Vector2(109, 28)
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope"]
@@ -33,7 +34,7 @@ shape = SubResource("CircleShape2D_jndiu")
 debug_color = Color(0, 0.698, 0.885, 0.5)
 
 [node name="EndAnchor" type="Node2D" parent="PixelRope"]
-position = Vector2(100, 0)
+position = Vector2(109, 28)
 script = ExtResource("2_jndiu")
 debug_color = Color(0, 0.698, 0.885, 0.5)
 

@@ -452,24 +452,34 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 # Draw the rope
+# Draw the rope
 func _draw() -> void:
 	if _editor_mode:
-		# Draw editor preview
+		# Draw editor preview directly without using the controller
 		if _start_node and _end_node:
-			_controller.render_editor_preview(
-				self,
-				_start_node.global_position,
-				_end_node.global_position,
-				pixel_size,
-				rope_color,
-				line_algorithm,
+			# Get points using the selected algorithm
+			var start = to_local(_start_node.global_position)
+			var end = to_local(_end_node.global_position)
+			
+			var points = LineAlgorithms.get_line_points(
+				start, end, 
+				pixel_size, 
+				line_algorithm, 
 				pixel_spacing
 			)
+			
+			# Draw pixels
+			for point in points:
+				draw_rect(
+					Rect2(point - Vector2(pixel_size/2, pixel_size/2), Vector2(pixel_size, pixel_size)), 
+					rope_color
+				)
 		return
 	
 	if _segments.is_empty():
 		return
 	
+	# For game mode, still use the controller if it's working properly
 	# Draw the rope
 	_controller.render_rope(
 		self,
