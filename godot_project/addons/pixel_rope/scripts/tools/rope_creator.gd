@@ -48,7 +48,7 @@ func _forward_canvas_gui_input(event: InputEvent) -> bool:
 				
 				# Create a temporary rope
 				current_rope = RopeScene.instantiate()
-				get_editor_interface().get_edited_scene_root().add_child(current_rope)
+				get_editor_interface().get_edited_scene_root().add_child.call_deferred(current_rope)
 				current_rope.owner = get_editor_interface().get_edited_scene_root()
 				
 				# Set up the anchors

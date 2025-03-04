@@ -50,8 +50,8 @@ func _ready() -> void:
 		# Enable debug draw on the collision shape
 		collision.debug_color = Color(0.7, 0.7, 1.0, 0.5)  # Light blue, semi-transparent
 		
-		area.add_child(collision)
-		add_child(area)
+		area.add_child.call_deferred(collision)
+		add_child.call_deferred(area)
 		
 		if _editor_mode and get_tree().edited_scene_root:
 			area.owner = get_tree().edited_scene_root
