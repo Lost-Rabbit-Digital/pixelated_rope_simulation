@@ -1,4 +1,3 @@
-@tool
 @icon("res://addons/pixel_rope/icons/CircleShape2D.svg")
 ## An optimized anchor point for PixelRope connections
 ##

@@ -1,4 +1,3 @@
-@tool
 class_name RopeSegment
 extends Resource
 

@@ -1,4 +1,3 @@
-@tool
 ## A high-performance pixel-perfect rope simulation node
 ## 
 ## Implements rope physics using multiple line drawing algorithms for accurate

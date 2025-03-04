@@ -1,4 +1,3 @@
-@tool
 @icon("res://addons/pixel_rope/icons/Curve2D.svg")
 ## A physically-simulated, pixel-perfect rope with multiple rendering algorithms
 ##

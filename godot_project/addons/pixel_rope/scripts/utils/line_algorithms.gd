@@ -1,4 +1,3 @@
-@tool
 ## A collection of line-drawing algorithms for pixel-perfect rendering
 ##
 ## Provides multiple line-drawing algorithms optimized for pixelated graphics.

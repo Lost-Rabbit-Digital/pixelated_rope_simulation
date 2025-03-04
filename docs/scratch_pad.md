@@ -17,6 +17,11 @@
 ## General
 - Turn into plugin
 - Fix errors that pop up when creating pixelrope
+- Change terms for anchors and pins
+- Create install instructions, both text and video
+- Reorganise properties in inspector
+- Remove anchor interaction mode while in-game, only need that for the editor, don't even need it, just 
+- Make it so you can move the debug anchors and have the line automatically update while in-editor
 
 # Completed Tasks
 - Change to MPL 2.0 license
