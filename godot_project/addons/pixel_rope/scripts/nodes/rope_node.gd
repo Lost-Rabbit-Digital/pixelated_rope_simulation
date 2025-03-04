@@ -325,10 +325,10 @@ func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
 	else:
 		collision.debug_color = Color(0, 0, 0, 0)  # Fully transparent
 	
-	area.add_child(collision)
-	anchor.add_child(area)
+	area.add_child.call_deferred(collision)
+	anchor.add_child.call_deferred(area)
 	
-	add_child(anchor)
+	add_child.call_deferred(anchor)
 	
 	# If this is being run in the editor, ensure the node is properly set up
 	if Engine.is_editor_hint():
