@@ -1,6 +1,6 @@
 # PixelRope
 
-![PixelRope Banner](https://img.shields.io/badge/Godot-4.4-blue) ![License](https://img.shields.io/badge/license-GPL--3.0-green) ![Version](https://img.shields.io/badge/version-1.0.0-orange)
+![PixelRope Banner](https://img.shields.io/badge/Godot-4.4-blue) ![License](https://img.shields.io/badge/license-MPL--2.0-green) ![Version](https://img.shields.io/badge/version-1.0.0-orange)
 
 A high-performance, pixel-perfect rope simulation plugin for Godot 4.4, featuring realistic physics, customizable rendering, and interactive anchors.
 
@@ -262,7 +262,10 @@ Contributions are welcome! Check the [GitHub repository](https://github.com/Lost
 
 ## 📜 License
 
-This project is licensed under the [GNU General Public License v3.0](LICENSE).
+This project is licensed under the [Mozilla Public License Version 2.0](LICENSE.md).
+
+## 👏 Attributions
+Please see [attributions.md](godot_project/addons/pixel_rope/information/ATTRIBUTIONS.md) for a list of contributors and feature request credits.
 
 ## 📞 Contact
 
