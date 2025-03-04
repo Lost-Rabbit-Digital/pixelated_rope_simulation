@@ -34,7 +34,7 @@ enum RopeState {
 		if Engine.is_editor_hint():
 			queue_redraw()
 
-@export var rope_color: Color = Color(0.8, 0.6, 0.2):
+@export var rope_color: Color = Color(1.0, 0.722, 0.016):
 	set(value):
 		rope_color = value
 		if Engine.is_editor_hint():
