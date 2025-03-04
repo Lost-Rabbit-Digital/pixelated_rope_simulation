@@ -27,8 +27,10 @@ position = Vector2(640, 12.5)
 shape = SubResource("RectangleShape2D_jndiu")
 
 [node name="PixelRope" type="Node2D" parent="."]
-position = Vector2(746, 218)
+position = Vector2(643, 214)
 script = ExtResource("2_sjcm7")
+dynamic_end_anchor = true
+enable_collisions = true
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope"]

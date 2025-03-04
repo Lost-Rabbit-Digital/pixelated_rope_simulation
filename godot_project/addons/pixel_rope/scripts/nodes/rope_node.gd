@@ -49,7 +49,7 @@ enum GrabMode {
 			queue_redraw()
 
 @export_group("Pixelation Properties")
-@export var pixel_size: int = 8:
+@export var pixel_size: int = 4:
 	set(value):
 		pixel_size = value
 		if Engine.is_editor_hint():
@@ -105,6 +105,11 @@ enum GrabMode {
 		if Engine.is_editor_hint():
 			queue_redraw()
 
+@export var show_anchor_debug: bool = true:
+	set(value):
+		show_anchor_debug = value
+		_update_anchor_debug_visualization()
+
 # New properties for dynamic anchors
 @export_group("Dynamic Anchors")
 ## Makes the start anchor dynamic (affected by physics forces)
@@ -127,6 +132,34 @@ enum GrabMode {
 
 ## Optional custom gravity for dynamic anchors that overrides the main gravity
 @export var anchor_gravity: Vector2 = Vector2.ZERO
+
+@export_group("Collision Properties")
+## Enable collisions between rope segments and the environment
+@export var enable_collisions: bool = false:
+	set(value):
+		enable_collisions = value
+		_setup_collision_detection()
+
+## Layers the rope will detect collisions with
+@export_flags_2d_physics var collision_mask: int = 1
+
+## Bounce factor when collision occurs (0 = no bounce, 1 = full bounce)
+@export_range(0.0, 1.0) var collision_bounce: float = 0.3
+
+## Friction factor when sliding along surfaces (0 = no friction, 1 = maximum friction)
+@export_range(0.0, 1.0) var collision_friction: float = 0.7
+
+## Radius of each rope segment for collision detection
+@export_range(1.0, 20.0) var collision_radius: float = 4.0:
+	set(value):
+		collision_radius = value
+		_update_collision_shapes()
+
+## Enable debug visualization of collision shapes
+@export var show_collision_debug: bool = true:
+	set(value):
+		show_collision_debug = value
+		_update_collision_debug()
 
 @export_group("Interaction Properties")
 ## Control how the rope can be interacted with
@@ -157,6 +190,13 @@ var _initialized: bool = false
 var _last_start_pos: Vector2
 var _last_end_pos: Vector2
 
+# Collision detection variables
+var _physics_direct_state: PhysicsDirectSpaceState2D = null
+var _segment_collision_shapes: Array[CircleShape2D] = []
+var _collision_query: PhysicsShapeQueryParameters2D = null
+var _collision_debug_points: Array = []
+var _last_collisions: Dictionary = {}  # Tracks last frame's collisions
+
 # Interaction variables
 var _segment_areas: Array[Area2D] = []
 var _is_dragging: bool = false
@@ -168,6 +208,30 @@ var _grab_offset: Vector2 = Vector2.ZERO
 # Editor-specific variables
 var _editor_mode: bool = false
 var _editor_timer: SceneTreeTimer
+
+func _setup_collision_detection() -> void:
+	if Engine.is_editor_hint():
+		return
+		
+	if not enable_collisions:
+		return
+	
+	# Get the direct space state for collision queries
+	_physics_direct_state = get_world_2d().direct_space_state
+	
+	# Create collision shapes for each segment
+	_segment_collision_shapes.clear()
+	for i in range(_segments.size()):
+		var shape = CircleShape2D.new()
+		shape.radius = collision_radius
+		_segment_collision_shapes.append(shape)
+	
+	# Create physics query parameters
+	_collision_query = PhysicsShapeQueryParameters2D.new()
+	_collision_query.collision_mask = collision_mask
+	_collision_query.margin = 2.0  # Small margin to improve collision detection
+	
+	print("PixelRope: Collision detection initialized")
 
 # Called when the node enters the scene tree
 func _ready() -> void:
@@ -196,11 +260,35 @@ func _ready() -> void:
 		
 		# Initialize the rope
 		_initialize_rope()
+		
+		# Set up collision detection
+		if enable_collisions:
+			_setup_collision_detection()
+		
 		_initialized = true
 		
 		# Set up segment interaction areas if enabled
 		if interaction_mode == GrabMode.ANY_POINT:
 			_setup_interaction_areas()
+
+# Update collision shapes if radius changes
+func _update_collision_shapes() -> void:
+	if _segment_collision_shapes.is_empty():
+		return
+		
+	for shape in _segment_collision_shapes:
+		shape.radius = collision_radius
+
+# Toggle debug visualization
+func _update_collision_debug() -> void:
+	if not enable_collisions:
+		return
+		
+	if not show_collision_debug:
+		_collision_debug_points.clear()
+	
+	# Force redraw to update debug visualization
+	queue_redraw()
 
 # Set up a timer for editor updates
 func _setup_editor_updates() -> void:
@@ -265,11 +353,12 @@ func _create_anchor_node(node_name: String, position: Vector2) -> Node2D:
 	# Set properties
 	anchor.radius = anchor_radius
 	anchor.debug_color = anchor_debug_color
+	anchor.show_debug_shape = show_anchor_debug
 	
 	# Connect position change signal
 	anchor.position_changed.connect(_on_anchor_position_changed.bind(anchor))
 	
-	add_child.call_deferred(anchor)
+	add_child(anchor)
 	
 	# If this is being run in the editor, ensure the node is properly set up
 	if Engine.is_editor_hint() and get_tree().edited_scene_root:
@@ -286,6 +375,13 @@ func _update_anchor_properties() -> void:
 	if _end_node and _end_node is RopeAnchor:
 		_end_node.radius = anchor_radius
 		_end_node.debug_color = anchor_debug_color
+
+func _update_anchor_debug_visualization() -> void:
+	if _start_node and _start_node is RopeAnchor:
+		_start_node.show_debug_shape = show_anchor_debug
+	
+	if _end_node and _end_node is RopeAnchor:
+		_end_node.show_debug_shape = show_anchor_debug
 
 func _on_anchor_position_changed(anchor: RopeAnchor) -> void:
 	if anchor.name == "StartAnchor":
@@ -354,6 +450,11 @@ func _initialize_rope() -> void:
 		})
 	
 	print("PixelRope: Created", _segments.size(), "segments with length", segment_length)
+	
+	# Set up collision detection if enabled
+	if enable_collisions and not Engine.is_editor_hint():
+		_setup_collision_detection()
+	
 	_broken = false
 	_state = RopeState.NORMAL
 
@@ -567,6 +668,66 @@ func _on_segment_mouse_exited(segment_index: int) -> void:
 		if not _mouse_over_end:  # Only reset cursor if not hovering over end anchor
 			Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 
+func _handle_collisions() -> void:
+	if not enable_collisions or not _physics_direct_state:
+		return
+		
+	# Clear last frame's collisions for debug visualization
+	_last_collisions.clear()
+	
+	# Check collisions for each segment
+	for i in range(_segments.size()):
+		var segment = _segments[i]
+		
+		# Skip locked or grabbed segments
+		if segment.is_locked or segment.is_grabbed:
+			continue
+			
+		# Set up query for this segment
+		_collision_query.shape = _segment_collision_shapes[i]
+		_collision_query.transform = Transform2D(0, segment.position)
+		
+		# Perform the collision query
+		var collisions = _physics_direct_state.intersect_shape(_collision_query, 1)
+		
+		if not collisions.is_empty():
+			var collision = collisions[0]
+			
+			# Store collision data for debugging
+			_last_collisions[i] = {
+				"position": collision.point,
+				"normal": collision.normal
+			}
+			
+			# Calculate collision response
+			var penetration_depth = collision_radius - (segment.position - collision.point).length()
+			if penetration_depth > 0:
+				# Movement vector
+				var movement_vec = segment.position - segment.old_position
+				
+				# Calculate reflection vector
+				var reflection = movement_vec.bounce(collision.normal)
+				
+				# Apply bounce and friction
+				var velocity = reflection * collision_bounce
+				
+				# Calculate friction - apply to the component parallel to the surface
+				var normal_component = collision.normal * velocity.dot(collision.normal)
+				var tangent_component = velocity - normal_component
+				tangent_component *= (1.0 - collision_friction)
+				
+				# Final velocity after friction
+				velocity = normal_component + tangent_component
+				
+				# Move the segment out of collision
+				segment.position = collision.point + (collision.normal * (collision_radius + 0.1))
+				
+				# Update old position to reflect bounce
+				segment.old_position = segment.position - velocity
+				
+				# Update segment in the array
+				_segments[i] = segment
+
 # Called every physics frame
 func _physics_process(delta: float) -> void:
 	if _editor_mode:
@@ -582,6 +743,10 @@ func _physics_process(delta: float) -> void:
 		
 	if not _initialized or _segments.is_empty():
 		return
+	
+	# Update physics direct state if needed
+	if enable_collisions and _physics_direct_state == null:
+		_physics_direct_state = get_world_2d().direct_space_state
 	
 	# Handle dragging based on what's being dragged
 	if _is_dragging:
@@ -674,6 +839,10 @@ func _update_physics(delta: float) -> void:
 	# Apply constraints multiple times for stability
 	for _i in range(iterations):
 		_apply_constraints()
+	
+	# Handle collisions after constraints
+	if enable_collisions:
+		_handle_collisions()
 
 # Maintain proper distance between segments
 func _apply_constraints() -> void:
@@ -766,6 +935,36 @@ func _draw() -> void:
 		# Draw pixelated rope segments
 		for i in range(len(points) - 1):
 			_draw_pixelated_line(points[i], points[i + 1], color)
+	
+	# Draw collision debug visualization if enabled
+	if enable_collisions and show_collision_debug:
+		_draw_collision_debug()
+
+func _draw_collision_debug() -> void:
+	if not enable_collisions or not show_collision_debug:
+		return
+		
+	# Draw collision shapes for debugging
+	var debug_color = Color(1.0, 0.3, 0.3, 0.4)
+	
+	for i in range(_segments.size()):
+		var segment = _segments[i]
+		var pos = to_local(segment.position)
+		
+		# Draw circle representing collision shape
+		draw_circle(pos, collision_radius, debug_color)
+		
+		# Draw contact points if any
+		if _last_collisions.has(i):
+			var collision_data = _last_collisions[i]
+			var contact_point = to_local(collision_data.position)
+			var normal = collision_data.normal * 10.0
+			
+			# Draw contact point
+			draw_circle(contact_point, 2.0, Color.RED)
+			
+			# Draw normal
+			draw_line(contact_point, contact_point + normal, Color.GREEN, 1.0)
 
 # Draw a line using the selected algorithm from LineAlgorithms
 func _draw_pixelated_line(from: Vector2, to: Vector2, color: Color) -> void:
