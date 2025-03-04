@@ -1,4 +1,3 @@
-# addons/pixel_rope/scripts/pixel_rope.gd
 @tool
 ## A high-performance pixel-perfect rope simulation node
 ## 
@@ -11,6 +10,10 @@ extends EditorPlugin
 # Register custom node types
 const rope_node_script = preload("res://addons/pixel_rope/scripts/nodes/rope_node.gd")
 const rope_anchor_script = preload("res://addons/pixel_rope/scripts/nodes/rope_anchor.gd")
+const line_algorithms = preload("res://addons/pixel_rope/scripts/utils/line_algorithms.gd")
+
+# Inspector plugin for handling property changes
+var inspector_plugin
 
 func _enter_tree() -> void:
 	# Add custom types with icons
@@ -28,12 +31,19 @@ func _enter_tree() -> void:
 		preload("res://addons/pixel_rope/icons/CircleShape2D.svg")
 	)
 	
-	print("PixelRope plugin initialized with ECS architecture")
+	# Create and add the inspector plugin
+	inspector_plugin = RopeInspectorPlugin.new()
+	add_inspector_plugin(inspector_plugin)
+	
+	print("PixelRope plugin initialized")
 
 func _exit_tree() -> void:
 	# Clean-up
 	remove_custom_type("PixelRope")
 	remove_custom_type("RopeAnchor")
+	
+	# Remove the inspector plugin
+	remove_inspector_plugin(inspector_plugin)
 	
 	print("PixelRope plugin disabled")
 
@@ -42,3 +52,39 @@ func _edit(object) -> void:
 	if object is PixelRope:
 		# Force a redraw when selected
 		object.queue_redraw()
+
+# Custom inspector plugin to catch property changes
+class RopeInspectorPlugin extends EditorInspectorPlugin:
+	func _can_handle(object) -> bool:
+		return object is PixelRope or object is RopeAnchor
+	
+	func _parse_property(object, type, name, hint_type, hint_string, usage_flags, wide) -> bool:
+		# Add a callback for rope-related properties
+		if object is PixelRope:
+			match name:
+				"start_position", "end_position", "pixel_size", "pixel_spacing", 
+				"segment_count", "segment_length", "rope_color", "line_algorithm":
+					# Connect property change to force redraw
+					add_property_change_callback(name, object, "_on_property_changed")
+		
+		# Also handle anchor properties
+		if object is RopeAnchor:
+			match name:
+				"position":
+					# Force parent rope to redraw when anchor moves
+					add_property_change_callback(name, object, "_on_position_changed")
+		
+		# Return false to let the default inspector handle the property
+		return false
+
+# Property change callback for PixelRope
+static func _on_property_changed(property, value, object, _edited_property) -> void:
+	# Queue a redraw to update the rope
+	object.queue_redraw()
+
+# Position change callback for RopeAnchor
+static func _on_position_changed(property, value, object, _edited_property) -> void:
+	# Find the parent PixelRope and force a redraw
+	var parent = object.get_parent()
+	if parent is PixelRope:
+		parent.queue_redraw()
