@@ -1,3 +1,4 @@
+@tool
 class_name CollisionSystem
 extends RefCounted
 
