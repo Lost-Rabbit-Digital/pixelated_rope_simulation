@@ -7,6 +7,14 @@ var _is_dragging: bool = false
 var _mouse_over_end: bool = false
 var _grab_offset: Vector2 = Vector2.ZERO
 
+func _get_global_mouse_position() -> Vector2:
+	# Simple approach: convert from screen to global coordinates directly
+	var viewport = Engine.get_main_loop().get_root()
+	var canvas_mouse_pos = viewport.get_mouse_position()
+	
+	# Convert from viewport coordinates to global coordinates
+	return viewport.get_canvas_transform().affine_inverse() * canvas_mouse_pos
+
 # Handle anchor dragging
 func process_anchor_interaction(
 	event: InputEvent,
@@ -22,7 +30,7 @@ func process_anchor_interaction(
 			# Start dragging end anchor
 			if _mouse_over_end and not dynamic_end_anchor:
 				_is_dragging = true
-				_grab_offset = end_anchor.global_position - _get_global_mouse_position()
+				_grab_offset = end_anchor.global_position - event.global_position
 				interaction_occurred = true
 		else:
 			# Stop dragging
@@ -33,7 +41,7 @@ func process_anchor_interaction(
 	if event is InputEventMouseMotion and _is_dragging:
 		# Update position while dragging
 		if not dynamic_end_anchor:
-			end_anchor.global_position = _get_global_mouse_position() + _grab_offset
+			end_anchor.global_position = event.global_position + _grab_offset
 			if segment_count < segments.size():
 				segments[segment_count].position = end_anchor.global_position
 			interaction_occurred = true
@@ -66,10 +74,6 @@ func setup_draggable_anchor(node: Node2D) -> void:
 		area.mouse_entered.connect(_on_anchor_mouse_entered)
 	if not area.mouse_exited.is_connected(_on_anchor_mouse_exited):
 		area.mouse_exited.connect(_on_anchor_mouse_exited)
-
-# Helper to get global mouse position
-func _get_global_mouse_position() -> Vector2:
-	return DisplayServer.mouse_get_position()
 
 # Signal handlers
 func _on_anchor_mouse_entered() -> void:

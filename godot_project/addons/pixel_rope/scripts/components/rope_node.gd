@@ -566,6 +566,27 @@ func _draw() -> void:
 		pixel_spacing,
 		enable_collisions
 	)
+	
+	# Debugging mouse position and interaction
+	if _segments.size() > 0 and not _segments.is_empty():
+		# Draw the dragged segment with a highlight if being grabbed
+		for i in range(_segments.size()):
+			var segment = _segments[i]
+			if segment.is_grabbed:
+				# Draw grabbed segment
+				var local_pos = to_local(segment.position)
+				draw_circle(local_pos, 10, Color.RED)
+				
+				# Draw line to mouse position
+				var viewport = Engine.get_main_loop().get_root()
+				var mouse_pos = viewport.get_canvas_transform().affine_inverse() * viewport.get_mouse_position()
+				var local_mouse = to_local(mouse_pos)
+				draw_line(local_pos, local_mouse, Color.GREEN, 2)
+				
+				# Draw offset vector
+				if _controller._rope_interaction._is_dragging:
+					var offset = _controller._rope_interaction._grab_offset
+					draw_line(local_mouse, local_mouse + offset, Color.BLUE, 2)
 
 # Break the rope
 func break_rope() -> void:

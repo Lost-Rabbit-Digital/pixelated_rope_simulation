@@ -9,6 +9,14 @@ var _grabbed_segment_index: int = -1
 var _grab_offset: Vector2 = Vector2.ZERO
 var _segment_areas: Array[Area2D] = []
 
+func _get_global_mouse_position() -> Vector2:
+	# Simple approach: convert from screen to global coordinates directly
+	var viewport = Engine.get_main_loop().get_root()
+	var canvas_mouse_pos = viewport.get_mouse_position()
+	
+	# Convert from viewport coordinates to global coordinates
+	return viewport.get_canvas_transform().affine_inverse() * canvas_mouse_pos
+
 # Process rope segment interaction
 func process_segment_interaction(
 	event: InputEvent,
@@ -21,6 +29,9 @@ func process_segment_interaction(
 		"segment_released": false
 	}
 	
+	# Get the camera that's rendering our scene
+	var viewport = Engine.get_main_loop().get_root()
+	
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			# Start dragging a segment
@@ -29,9 +40,9 @@ func process_segment_interaction(
 				_grabbed_segment_index = _hover_segment_index
 				segments[_grabbed_segment_index].grab()
 				
-				# Calculate grab offset
-				var mouse_pos = _get_global_mouse_position()
-				_grab_offset = segments[_grabbed_segment_index].position - mouse_pos
+				# Calculate grab offset - convert mouse position to global space
+				var global_mouse_pos = viewport.get_canvas_transform().affine_inverse() * event.position
+				_grab_offset = segments[_grabbed_segment_index].position - global_mouse_pos
 				
 				result.interaction_occurred = true
 				result.segment_grabbed = _grabbed_segment_index
@@ -51,7 +62,9 @@ func process_segment_interaction(
 	if event is InputEventMouseMotion and _is_dragging:
 		# Update dragged segment position
 		if _grabbed_segment_index >= 0 and _grabbed_segment_index < segments.size():
-			var target_pos = _get_global_mouse_position() + _grab_offset
+			# Get mouse position in global space
+			var global_mouse_pos = viewport.get_canvas_transform().affine_inverse() * event.position
+			var target_pos = global_mouse_pos + _grab_offset
 			
 			# Apply grab strength to make dragging feel more responsive
 			segments[_grabbed_segment_index].position = segments[_grabbed_segment_index].position.lerp(
@@ -62,10 +75,6 @@ func process_segment_interaction(
 			result.interaction_occurred = true
 	
 	return result
-
-# Helper to get global mouse position
-func _get_global_mouse_position() -> Vector2:
-	return DisplayServer.mouse_get_position()
 
 # Set up interaction areas for rope segments
 func setup_interaction_areas(
@@ -125,6 +134,8 @@ func update_interaction_areas(
 		if collision and collision.shape is CapsuleShape2D:
 			var shape = collision.shape as CapsuleShape2D
 			shape.radius = interaction_width / 2.0
+			
+			# Make sure coordinate transformations are consistent here
 			_update_segment_area_shape(i, segments, shape, collision, parent)
 
 # Update a single segment area shape and position

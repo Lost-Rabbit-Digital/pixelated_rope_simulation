@@ -55,6 +55,6 @@ position = Vector2(640, 12.5)
 shape = SubResource("RectangleShape2D_sjcm7")
 
 [node name="PixelRope" type="Node2D" parent="."]
-position = Vector2(685, 65)
+position = Vector2(715, 19)
 script = ExtResource("2_sjcm7")
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
