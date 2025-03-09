@@ -76,8 +76,8 @@ func _setup_rope_creator() -> void:
 	
 	# Create the rope creator button
 	rope_button = Button.new()
-	rope_button.text = "Create Rope"
-	rope_button.tooltip_text = "Click and drag to create a rope"
+	rope_button.text = "Create Ropes"
+	rope_button.tooltip_text = "Click to spawn rope nodes"
 	rope_button.flat = true
 	rope_button.icon = preload("res://addons/pixel_rope/icons/Curve2D.svg")
 	rope_button.pressed.connect(_on_rope_button_pressed)
@@ -86,7 +86,7 @@ func _setup_rope_creator() -> void:
 	# Add toolbar to the editor
 	add_control_to_container(EditorPlugin.CONTAINER_CANVAS_EDITOR_MENU, toolbar)
 	
-	print("PixelRope - Initialized toolbar button in 2D Editor")
+	#print("PixelRope - Initialized toolbar button in 2D Editor")
 
 # Clean up the rope creator
 func _cleanup_rope_creator() -> void:
@@ -95,7 +95,7 @@ func _cleanup_rope_creator() -> void:
 		toolbar.queue_free()
 		toolbar = null
 		
-	print("PixelRope - Removed button from toolbar in 2D Editor")
+	#print("PixelRope - Removed button from toolbar in 2D Editor")
 
 func _on_rope_button_pressed() -> void:
 	# Toggle the rope creation mode
@@ -103,6 +103,7 @@ func _on_rope_button_pressed() -> void:
 	
 	if is_rope_creating_mode:
 		rope_button.text = "Cancel Rope"
+		rope_button.tooltip_text = "AHHH, CANCEL IT! PLEASE!"
 		rope_button.modulate = Color(1.0, 0.5, 0.5) # Visual feedback for active state
 	else:
 		rope_button.text = "Create Rope"
