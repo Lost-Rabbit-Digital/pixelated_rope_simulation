@@ -1,11 +1,16 @@
 @tool 
-extends EditorPlugin
-
 ## A tool for creating PixelRope instances in the editor
 ##
 ## Adds a button to the canvas editor toolbar that enables a special mode
 ## for creating rope instances by clicking and dragging in the editor viewport.
 ## The rope's properties are automatically configured based on the drag distance.
+extends EditorPlugin
+
+# Constants
+const DISABLED_TOOLTIP: String = "DISABLED: Enable to spawn rope nodes on click"
+const DISABLED_COLOR: Color = Color(1.0, 0.5, 0.5) 
+const ENABLED_COLOR: Color = Color(0.5, 1.0, 0.5) 
+const ENABLED_TOOLTIP: String = "ENABLED: Currently spawning pixel rope nodes"
 
 # UI component
 var rope_button: Button
@@ -22,6 +27,7 @@ var _editor_selection: EditorSelection
 var plugin_root: EditorPlugin
 
 # The scene to instance when creating ropes
+# TODO: Change this to whatever current scene is open
 const RopeScene = preload("res://addons/pixel_rope/example/demo_scene.tscn")
 
 ## Initializes the rope creation tool
@@ -38,7 +44,9 @@ func initialize(parent_plugin: EditorPlugin, editor_selection: EditorSelection) 
 	
 	# Create the rope creator button
 	rope_button = Button.new()
-	rope_button.tooltip_text = "Enable spawning of rope nodes on click"
+	rope_button.toggle_mode = false
+	rope_button.tooltip_text = DISABLED_TOOLTIP
+	rope_button.modulate = DISABLED_COLOR
 	rope_button.icon = preload("res://addons/pixel_rope/icons/Curve2D.svg")
 	rope_button.pressed.connect(_on_rope_button_pressed)
 
@@ -61,16 +69,20 @@ func _on_rope_button_pressed() -> void:
 	is_rope_creating_mode = !is_rope_creating_mode
 	
 	if is_rope_creating_mode:
-		rope_button.tooltip_text = "Disable spawning of rope nodes on click"
-		rope_button.modulate = Color(1.0, 0.5, 0.5)
+		rope_button.toggle_mode = true
+		rope_button.tooltip_text = ENABLED_TOOLTIP
+		rope_button.modulate = ENABLED_COLOR
 	else:
-		rope_button.tooltip_text = "Enable spawning of rope nodes on click"
-		rope_button.modulate = Color(1.0, 1.0, 1.0)
+		rope_button.toggle_mode = false
+		rope_button.tooltip_text = DISABLED_TOOLTIP
+		rope_button.modulate = DISABLED_COLOR
 		
 		if current_rope:
 			current_rope.queue_free()
 			current_rope = null
 
+
+# TODO: Redo input, click to create the pixel rope node, then you can drag and drop the anchors for it.
 ## Handles input events for rope creation
 ##
 ## Manages the mouse interaction for creating rope nodes by clicking and dragging.
