@@ -57,7 +57,7 @@ func initialize(parent_plugin: EditorPlugin, editor_selection: EditorSelection) 
 	# Add toolbar to the editor
 	plugin_root.add_control_to_container(EditorPlugin.CONTAINER_CANVAS_EDITOR_MENU, toolbar)
 	
-	print("PixelRope - Initialized rope creation tool")
+	#print("PixelRope - Initialized rope creation tool")
 
 ## Cleans up the rope creation tool
 ##
@@ -69,7 +69,7 @@ func cleanup() -> void:
 		toolbar.queue_free()
 		toolbar = null
 		
-	print("PixelRope - Removed rope creation tool")
+	#print("PixelRope - Removed rope creation tool")
 
 ## Button press handler
 func _on_rope_button_pressed() -> void:
