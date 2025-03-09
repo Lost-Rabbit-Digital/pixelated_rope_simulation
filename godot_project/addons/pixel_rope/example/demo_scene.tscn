@@ -43,22 +43,22 @@ debug_color = Color(0, 0.698, 0.885, 0.5)
 shape = SubResource("CircleShape2D_sjcm7")
 debug_color = Color(0, 0.698, 0.885, 0.5)
 
-[node name="Interactables" type="Node" parent="."]
+[node name="InteractableObjects" type="Node" parent="."]
 
-[node name="Ground" type="ColorRect" parent="Interactables"]
+[node name="Ground" type="ColorRect" parent="InteractableObjects"]
 offset_top = 695.0
 offset_right = 1280.0
 offset_bottom = 720.0
 color = Color(0.369408, 0.633659, 0.678473, 1)
 
-[node name="StaticBody2D" type="StaticBody2D" parent="Interactables/Ground"]
+[node name="StaticBody2D" type="StaticBody2D" parent="InteractableObjects/Ground"]
 physics_material_override = SubResource("PhysicsMaterial_jndiu")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Interactables/Ground/StaticBody2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractableObjects/Ground/StaticBody2D"]
 position = Vector2(640, 12.5)
 shape = SubResource("RectangleShape2D_sjcm7")
 
-[node name="Box_1" type="ColorRect" parent="Interactables"]
+[node name="Box_1" type="ColorRect" parent="InteractableObjects"]
 offset_left = 267.0
 offset_top = 235.0
 offset_right = 1547.0
@@ -66,14 +66,14 @@ offset_bottom = 260.0
 scale = Vector2(0.0946693, 4.93144)
 color = Color(0.369408, 0.633659, 0.678473, 1)
 
-[node name="StaticBody2D" type="StaticBody2D" parent="Interactables/Box_1"]
+[node name="StaticBody2D" type="StaticBody2D" parent="InteractableObjects/Box_1"]
 physics_material_override = SubResource("PhysicsMaterial_jndiu")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Interactables/Box_1/StaticBody2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractableObjects/Box_1/StaticBody2D"]
 position = Vector2(640, 12.5)
 shape = SubResource("RectangleShape2D_sjcm7")
 
-[node name="Box_2" type="ColorRect" parent="Interactables"]
+[node name="Box_2" type="ColorRect" parent="InteractableObjects"]
 offset_left = 867.0
 offset_top = 106.0
 offset_right = 2147.0
@@ -81,9 +81,9 @@ offset_bottom = 131.0
 scale = Vector2(0.0433861, 2.07337)
 color = Color(0.369408, 0.633659, 0.678473, 1)
 
-[node name="StaticBody2D" type="StaticBody2D" parent="Interactables/Box_2"]
+[node name="StaticBody2D" type="StaticBody2D" parent="InteractableObjects/Box_2"]
 physics_material_override = SubResource("PhysicsMaterial_jndiu")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Interactables/Box_2/StaticBody2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractableObjects/Box_2/StaticBody2D"]
 position = Vector2(640, 12.5)
 shape = SubResource("RectangleShape2D_sjcm7")
