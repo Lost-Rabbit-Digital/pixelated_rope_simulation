@@ -76,8 +76,8 @@ func _setup_rope_creator() -> void:
 	
 	# Create the rope creator button
 	rope_button = Button.new()
-	rope_button.text = "Create Ropes"
-	rope_button.tooltip_text = "Click to spawn rope nodes"
+	rope_button.text = "Enable Rope Creation"
+	rope_button.tooltip_text = "Enable spawning of rope nodes on click"
 	rope_button.flat = true
 	rope_button.icon = preload("res://addons/pixel_rope/icons/Curve2D.svg")
 	rope_button.pressed.connect(_on_rope_button_pressed)
@@ -102,11 +102,12 @@ func _on_rope_button_pressed() -> void:
 	is_rope_creating_mode = !is_rope_creating_mode
 	
 	if is_rope_creating_mode:
-		rope_button.text = "Cancel Rope"
-		rope_button.tooltip_text = "AHHH, CANCEL IT! PLEASE!"
+		rope_button.text = "Disable Rope Creation"
+		rope_button.tooltip_text = "Disable spawning of rope nodes on click"
 		rope_button.modulate = Color(1.0, 0.5, 0.5) # Visual feedback for active state
 	else:
-		rope_button.text = "Create Rope"
+		rope_button.text = "Enable Rope Creation"
+		rope_button.tooltip_text = "Enable spawning of rope nodes on click"
 		rope_button.modulate = Color(1.0, 1.0, 1.0) # Reset color
 		if current_rope:
 			current_rope.queue_free()
