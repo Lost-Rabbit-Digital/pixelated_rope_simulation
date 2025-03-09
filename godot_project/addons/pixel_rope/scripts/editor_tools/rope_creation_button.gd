@@ -7,8 +7,7 @@ extends EditorPlugin
 ## for creating rope instances by clicking and dragging in the editor viewport.
 ## The rope's properties are automatically configured based on the drag distance.
 
-# UI components
-var toolbar: HBoxContainer
+# UI component
 var rope_button: Button
 
 # Creation state tracking
@@ -37,12 +36,8 @@ func initialize(parent_plugin: EditorPlugin, editor_selection: EditorSelection) 
 	plugin_root = parent_plugin
 	_editor_selection = editor_selection
 	
-	# Create toolbar container
-	toolbar = HBoxContainer.new()
-	
 	# Create the rope creator button
 	rope_button = Button.new()
-	rope_button.text = "Enable Rope Creation"
 	rope_button.tooltip_text = "Enable spawning of rope nodes on click"
 	rope_button.icon = preload("res://addons/pixel_rope/icons/Curve2D.svg")
 	rope_button.pressed.connect(_on_rope_button_pressed)
@@ -50,20 +45,18 @@ func initialize(parent_plugin: EditorPlugin, editor_selection: EditorSelection) 
 	# Use the editor's theme for the button
 	_apply_editor_theme(rope_button)
 	
-	toolbar.add_child(rope_button)
-	
 	# Add toolbar to the editor
-	plugin_root.add_control_to_container(EditorPlugin.CONTAINER_CANVAS_EDITOR_MENU, toolbar)
+	plugin_root.add_control_to_container(EditorPlugin.CONTAINER_CANVAS_EDITOR_MENU, rope_button)
 
 ## Cleans up the rope creation tool
 ##
 ## Removes UI elements and disconnects signals. Should be called by
 ## the parent plugin when it is deactivated.
 func cleanup() -> void:
-	if toolbar:
-		plugin_root.remove_control_from_container(EditorPlugin.CONTAINER_CANVAS_EDITOR_MENU, toolbar)
-		toolbar.queue_free()
-		toolbar = null
+	if rope_button:
+		plugin_root.remove_control_from_container(EditorPlugin.CONTAINER_CANVAS_EDITOR_MENU, rope_button)
+		rope_button.queue_free()
+		rope_button = null
 
 ## Apply editor theme to UI elements
 ## 
@@ -103,7 +96,6 @@ func _on_rope_button_pressed() -> void:
 	is_rope_creating_mode = !is_rope_creating_mode
 	
 	if is_rope_creating_mode:
-		rope_button.text = "Disable Rope Creation"
 		rope_button.tooltip_text = "Disable spawning of rope nodes on click"
 		
 		# Use the theme's colors instead of hardcoded values
@@ -114,7 +106,6 @@ func _on_rope_button_pressed() -> void:
 		else:
 			rope_button.modulate = Color(1.0, 0.5, 0.5)
 	else:
-		rope_button.text = "Enable Rope Creation"
 		rope_button.tooltip_text = "Enable spawning of rope nodes on click"
 		
 		# Reset any color overrides
