@@ -41,10 +41,7 @@ func initialize(parent_plugin: EditorPlugin, editor_selection: EditorSelection) 
 	rope_button.tooltip_text = "Enable spawning of rope nodes on click"
 	rope_button.icon = preload("res://addons/pixel_rope/icons/Curve2D.svg")
 	rope_button.pressed.connect(_on_rope_button_pressed)
-	
-	# Use the editor's theme for the button
-	_apply_editor_theme(rope_button)
-	
+
 	# Add toolbar to the editor
 	plugin_root.add_control_to_container(EditorPlugin.CONTAINER_CANVAS_EDITOR_MENU, rope_button)
 
@@ -58,38 +55,6 @@ func cleanup() -> void:
 		rope_button.queue_free()
 		rope_button = null
 
-## Apply editor theme to UI elements
-## 
-## Gets the current editor theme and applies it to the UI elements
-## to ensure consistency with the rest of the editor interface.
-## 
-## @param control The control to apply the theme to
-func _apply_editor_theme(control: Control) -> void:
-	if plugin_root:
-		var editor_interface = plugin_root.get_editor_interface()
-		if editor_interface:
-			# Get the base control which has access to the editor theme
-			var base_control = editor_interface.get_base_control()
-			if base_control:
-				# Apply the theme from the base control
-				control.theme = base_control.theme
-				
-				# For buttons in toolbar, we want to match the editor's toolbar buttons
-				if control is Button:
-					# Use the editor's button styling
-					control.flat = true
-					
-					# Optional: Listen for theme changes
-					if not base_control.theme_changed.is_connected(_on_editor_theme_changed):
-						base_control.theme_changed.connect(_on_editor_theme_changed)
-
-## Respond to editor theme changes
-##
-## Updates the button styling when the editor theme changes
-func _on_editor_theme_changed() -> void:
-	if rope_button and rope_button.is_valid_object():
-		_apply_editor_theme(rope_button)
-
 ## Button press handler
 func _on_rope_button_pressed() -> void:
 	# Toggle the rope creation mode
@@ -97,19 +62,9 @@ func _on_rope_button_pressed() -> void:
 	
 	if is_rope_creating_mode:
 		rope_button.tooltip_text = "Disable spawning of rope nodes on click"
-		
-		# Use the theme's colors instead of hardcoded values
-		var theme = rope_button.get_theme()
-		if theme:
-			# Use accent color from theme if available, otherwise use a gentle highlight
-			rope_button.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5))
-		else:
-			rope_button.modulate = Color(1.0, 0.5, 0.5)
+		rope_button.modulate = Color(1.0, 0.5, 0.5)
 	else:
 		rope_button.tooltip_text = "Enable spawning of rope nodes on click"
-		
-		# Reset any color overrides
-		rope_button.remove_theme_color_override("font_color")
 		rope_button.modulate = Color(1.0, 1.0, 1.0)
 		
 		if current_rope:

@@ -14,17 +14,13 @@ config/name="Pixel Ropes"
 config/tags=PackedStringArray("open_sourced", "prototype", "utility")
 run/main_scene="uid://3xv28xdk5fcv"
 config/features=PackedStringArray("4.4", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="uid://6brum02mgg18"
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/pixel_rope/plugin.cfg")
 
 [rendering]
 
