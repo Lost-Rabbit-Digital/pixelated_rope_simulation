@@ -11,10 +11,10 @@ config_version=5
 [application]
 
 config/name="Pixel Ropes"
-config/tags=PackedStringArray("open_sourced", "prototype", "utility")
+config/tags=PackedStringArray("open_sourced", "plugin", "prototype", "utility")
 run/main_scene="uid://3xv28xdk5fcv"
 config/features=PackedStringArray("4.4", "GL Compatibility")
-config/icon="uid://6brum02mgg18"
+config/icon="uid://cd6ksq3ikglbj"
 
 [display]
 
