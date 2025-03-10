@@ -28,7 +28,7 @@ var plugin_root: EditorPlugin
 
 # The scene to instance when creating ropes
 # TODO: Change this to whatever current scene is open
-const RopeScene = preload("res://addons/pixel_rope/example/demo_scene.tscn")
+const RopeScene = preload("res://addons/pixel_rope/examples/basic_ropes/demo_scene_1.tscn")
 
 ## Initializes the rope creation tool
 ##
