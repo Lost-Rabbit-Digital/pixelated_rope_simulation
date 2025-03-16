@@ -8,37 +8,32 @@ A high-performance, pixel-perfect rope simulation plugin for Godot 4.4, featurin
   <img src="docs/preview.gif" alt="PixelRope Demo" width="600"/>
 </p>
 
-## 🚀 For Godot Developers
+## Features
 
-**PixelRope** brings authentic retro-style rope physics to your Godot 4.4 projects with minimal setup. Whether you're creating a pixel-art platformer, a physics puzzle, or a retro-themed adventure, PixelRope offers a complete solution with:
-
-- 📐 **Pixel-perfect rendering** using multiple line algorithms (Bresenham and DDA)
-- 🧵 **Realistic physics** with verlet integration and customizable properties
-- 🔌 **Entity Component System (ECS) friendly** design for optimal performance
-- 🎮 **Full interaction** support with grabbing, breaking, and dynamic anchors
+- 📐 **Pixel-perfect rendering** with multiple line algorithms (Bresenham and DDA)
+- 🧵 **Realistic physics** with verlet integration
+- 🔌 **ECS-friendly** design for optimal performance
+- 🎮 **Interactive ropes** with grabbing, breaking, and dynamic anchors
 - 🎨 **Visual customization** with adjustable pixel size, spacing, and colors
+- 💥 **Collision detection** with environment objects
 
-### Adding a PixelRope to your scene
+## Documentation
 
-1. Right-click in the Scene panel and select "Add Child Node"
-2. Search for "PixelRope" and select it
-3. The rope will appear with default anchors that you can position
-4. Adjust properties in the Inspector panel
+Comprehensive documentation is available:
 
-Or create one through code:
+- [Getting Started](docs/getting_started.md) - Installation and basic setup
+- [API Reference](docs/api_reference.md) - Complete reference for all classes, methods, and properties
+- [Configuration Guide](docs/configuration.md) - Detailed configuration options
+- [Advanced Usage](docs/advanced_usage.md) - In-depth technical details
+- [Example Implementations](docs/examples.md) - Common use case implementations
+- [Performance Optimization](docs/performance.md) - Tips for maximum performance
+- [Troubleshooting Guide](docs/troubleshooting.md) - Solutions for common issues
 
-```gdscript
-# Adding a rope is as simple as:
-var rope = PixelRope.new()
-rope.segment_count = 20
-rope.pixel_size = 4
-rope.rope_color = Color(0.8, 0.6, 0.2)
-add_child(rope)
-```
+## Quick Start
 
-## 📥 Installation
+### Installation
 
-### Method 1: Godot AssetLib (Recommended)
+#### Method 1: Godot AssetLib (Recommended)
 
 1. Open your Godot project
 2. Navigate to AssetLib tab in the top center of the editor
@@ -47,227 +42,62 @@ add_child(rope)
 5. In the installation dialog, click "Install"
 6. Enable the plugin in Project Settings > Plugins
 
-### Method 2: Manual Installation
+#### Method 2: Manual Installation
 
-1. Download the plugin from the [GitHub repository](https://github.com/Lost-Rabbit-Digital/pixelated_rope_simulation)
+1. Download the plugin from this repository
 2. Extract the `addons/pixel_rope` folder into your project's `addons` directory
 3. Enable the plugin in Project Settings > Plugins
-4. Add a `PixelRope` node to your scene and configure its properties
 
-## 🔧 Basic Usage
-
-### Creating a Rope
-
-1. Add a `PixelRope` node to your scene
-2. Configure the start and end positions or adjust the existing anchor nodes
-3. Customize the rope properties (segment count, pixel size, etc.)
-4. Run your scene to see the physics in action
-
-### Rope Properties
-
-| Property | Description |
-|----------|-------------|
-| `segment_count` | Number of segments in the rope (affects resolution) |
-| `segment_length` | Length of each segment (affects total rope length) |
-| `pixel_size` | Size of each rendered pixel |
-| `pixel_spacing` | Optional spacing between pixels for dotted line effect |
-| `rope_color` | Color of the rope |
-| `line_algorithm` | Bresenham (faster) or DDA (smoother) |
-
-### Physics Properties
-
-| Property | Description |
-|----------|-------------|
-| `gravity` | Force applied to rope segments |
-| `damping` | Velocity dampening (lower = more bouncy) |
-| `iterations` | Physics iteration count (higher = more stable) |
-| `max_stretch_factor` | Maximum stretch before rope breaks |
-
-### Anchor Options
-
-| Property | Description |
-|----------|-------------|
-| `dynamic_start_anchor` | Makes start anchor react to physics |
-| `dynamic_end_anchor` | Makes end anchor react to physics |
-| `anchor_mass` | How heavily anchors are affected by forces |
-| `anchor_jitter` | Adds random movement to dynamic anchors |
-
-## 📚 API Reference
-
-### Signals
-
-- `rope_broken`: Emitted when the rope breaks due to excessive stretching
-- `rope_grabbed(segment_index)`: Emitted when a rope segment is grabbed
-- `rope_released`: Emitted when a grabbed rope segment is released
-
-### Methods
-
-- `break_rope()`: Manually breaks the rope
-- `reset_rope()`: Resets a broken rope to its original state
-- `get_state()`: Returns the current rope state (NORMAL, STRETCHED, BROKEN)
-
-## 🔬 Technical Implementation
-
-### System Architecture
-
-PixelRope is built using a modular architecture that cleanly separates its core components:
-
-1. **Core Simulation** (`rope_node.gd`): Implements verlet integration physics and constraint solving
-2. **Rendering System** (`line_algorithms.gd`): Handles pixel-perfect line drawing with multiple algorithms
-3. **Interaction System**: Manages grabbing, dragging, and breaking mechanics
-4. **Editor Integration** (`pixel_rope.gd`): Provides seamless editor tools and live preview
-
-### Verlet Integration Physics
-
-The rope simulation uses verlet integration for robust, stable physics without requiring complex differential equations:
+### Basic Usage
 
 ```gdscript
-# For each segment in the rope
-for i in range(_segments.size()):
-    var segment = _segments[i]
-    if segment.is_locked or segment.is_grabbed:
-        continue
-        
-    var temp = segment.position
-    var velocity = segment.position - segment.old_position
-    
-    # Apply forces with mass factoring
-    segment.position += velocity * damping + gravity * delta * delta / segment.mass
-    segment.old_position = temp
+# Create a rope
+var rope = PixelRope.new()
+
+# Configure basic properties
+rope.segment_count = 50
+rope.segment_length = 5.0
+rope.pixel_size = 4
+rope.rope_color = Color(0.8, 0.6, 0.2)
+
+# Add to scene
+add_child(rope)
+
+# Position the anchors
+rope.start_position = Vector2(100, 100)
+rope.end_position = Vector2(300, 300)
 ```
 
-After position updates, the system applies iterative constraint solving to maintain segment lengths:
+## Example Scenes
 
-```gdscript
-for i in range(iterations):
-    for j in range(segment_count):
-        var segment1 = _segments[j]
-        var segment2 = _segments[j + 1]
-        
-        var current_vec = segment2.position - segment1.position
-        var current_dist = current_vec.length()
-        
-        # Apply position correction based on constraint
-        var difference = segment_length - current_dist
-        var percent = difference / current_dist
-        var correction = current_vec * percent
-        
-        # Weight by mass for realistic movement
-        if not segment1.is_locked:
-            segment1.position -= correction * (segment2.mass / (segment1.mass + segment2.mass))
-            
-        if not segment2.is_locked:
-            segment2.position += correction * (segment1.mass / (segment1.mass + segment2.mass))
-```
+The plugin includes several example scenes demonstrating different use cases:
 
-### Pixel-Perfect Line Rendering
+- Basic rope configuration
+- Dynamic bridges
+- Grappling hooks
+- Pulley systems
+- Towing mechanics
+- Dynamic lighting
 
-The rendering system implements two classic line-drawing algorithms optimized for pixelated graphics:
-
-1. **Bresenham's Line Algorithm**: An integer-based approach that's computationally efficient and produces perfectly aligned pixel patterns:
-
-```gdscript
-static func _bresenham_line(from: Vector2, to: Vector2, pixel_size: int, spacing: int = 0) -> Array[Vector2]:
-    var points: Array[Vector2] = []
-    
-    var x0 = int(from.x / pixel_size)
-    var y0 = int(from.y / pixel_size)
-    var x1 = int(to.x / pixel_size)
-    var y1 = int(to.y / pixel_size)
-    
-    var dx = abs(x1 - x0)
-    var dy = -abs(y1 - y0)
-    var sx = 1 if x0 < x1 else -1
-    var sy = 1 if y0 < y1 else -1
-    var err = dx + dy
-    
-    # Algorithm implementation with optional spacing
-    while true:
-        if spacing == 0 or pixel_count % (spacing + 1) == 0:
-            points.append(Vector2(x0 * pixel_size, y0 * pixel_size))
-        
-        if x0 == x1 and y0 == y1:
-            break
-            
-        var e2 = 2 * err
-        if e2 >= dy:
-            if x0 == x1:
-                break
-            err += dy
-            x0 += sx
-        
-        if e2 <= dx:
-            if y0 == y1:
-                break
-            err += dx
-            y0 += sy
-    
-    return points
-```
-
-2. **Digital Differential Analyzer (DDA)**: A floating-point algorithm that produces smoother results for diagonal lines:
-
-```gdscript
-static func _dda_line(from: Vector2, to: Vector2, pixel_size: int, spacing: int = 0) -> Array[Vector2]:
-    var points: Array[Vector2] = []
-    
-    var x0 = from.x / pixel_size
-    var y0 = from.y / pixel_size
-    var x1 = to.x / pixel_size
-    var y1 = to.y / pixel_size
-    
-    var dx = x1 - x0
-    var dy = y1 - y0
-    var steps = max(abs(dx), abs(dy))
-    
-    var x_inc = dx / steps
-    var y_inc = dy / steps
-    
-    var x = x0
-    var y = y0
-    
-    for i in range(steps + 1):
-        if spacing == 0 or i % (spacing + 1) == 0:
-            points.append(Vector2(round(x) * pixel_size, round(y) * pixel_size))
-        
-        x += x_inc
-        y += y_inc
-    
-    return points
-```
-
-### ECS Compatibility Design
-
-The plugin uses a component-based design that aligns with Entity Component System principles:
-
-1. **Rope Entity** (`PixelRope`): The main node that coordinates the overall system
-2. **Anchor Components** (`RopeAnchor`): Modular attachment points with physics properties
-3. **Segment Data**: Stored as dictionary components with position, velocity, and constraint data
-4. **Physics System**: Processes all segments through verlet integration and constraints
-5. **Rendering System**: Handles the visual representation independently of physics
-
-This approach enables high performance even with complex rope systems, as updates are processed in batches with minimal overhead.
-
-### Performance Optimizations
-
-1. **Customizable Iteration Count**: Allows balancing between physics accuracy and performance
-2. **Adaptive Segment Count**: Automatically adjusts based on rope length for optimal resolution
-3. **Efficient Line Algorithms**: Uses integer-based Bresenham by default for maximum performance
-4. **Area2D Pooling**: Minimizes node creation for interaction areas
-5. **Editor-Only Updates**: Disables expensive operations when in the Godot editor
-
-## 🤝 Contributing
-
-Contributions are welcome! Check the [GitHub repository](https://github.com/Lost-Rabbit-Digital/pixelated_rope_simulation) for issues or submit pull requests.
-
-## 📜 License
+## License
 
 This project is licensed under the [Mozilla Public License Version 2.0](LICENSE.md).
 
-## 👏 Attributions
-Please see [attributions.md](godot_project/addons/pixel_rope/information/ATTRIBUTIONS.md) for a list of contributors and feature request credits.
+## Contributing
 
-## 📞 Contact
+Contributions are welcome! Check the [GitHub issues](https://github.com/Lost-Rabbit-Digital/pixelated_rope_simulation/issues) or submit pull requests.
+
+## Attributions
+
+**Lost Rabbit Digital LLC**  
+- [Boden McHale](https://www.bodenmchale.com/) - Programming and Design
+
+### Feature Requests
+- **Tangle System** - [@smitner.studio](https://bsky.app/profile/smitner.studio/post/3ljiul5ioqc2o)
+- **Collision System** - [@atropos148.bsky.social](https://bsky.app/profile/atropos148.bsky.social/post/3ljhccxiiyc2g)
+- **Elastic System** - [@brinegame.bsky.social](https://bsky.app/profile/brinegame.bsky.social/post/3ljgyh6d5lc2x)
+
+## Contact
 
 - BlueSky: https://bsky.app/profile/bodengamedev.bsky.social
 - GitHub: https://github.com/Lost-Rabbit-Digital
