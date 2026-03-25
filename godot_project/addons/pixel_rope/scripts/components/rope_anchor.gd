@@ -92,7 +92,7 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		var mouse := get_viewport().get_canvas_transform().affine_inverse() * event.position
+		var mouse: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * event.position
 
 		if event.pressed:
 			if mouse.distance_to(global_position) <= radius:
@@ -105,7 +105,7 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 	elif event is InputEventMouseMotion and _dragging:
-		var mouse := get_viewport().get_canvas_transform().affine_inverse() * event.position
+		var mouse: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * event.position
 		global_position = mouse + _drag_offset
 		_last_position = position
 		_notify_parent()
