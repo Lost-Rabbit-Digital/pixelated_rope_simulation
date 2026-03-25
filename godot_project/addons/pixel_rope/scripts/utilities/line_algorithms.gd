@@ -42,10 +42,10 @@ static func _bresenham_line(from: Vector2, to: Vector2, pixel_size: int, spacing
 	var y1 := int(to.y / pixel_size)
 
 	var dx := abs(x1 - x0)
-	var dy := -abs(y1 - y0)
+	var dy: int = -abs(y1 - y0)
 	var sx := 1 if x0 < x1 else -1
 	var sy := 1 if y0 < y1 else -1
-	var err := dx + dy
+	var err: int = dx + dy
 	var pixel_count := 0
 
 	while true:
@@ -57,7 +57,7 @@ static func _bresenham_line(from: Vector2, to: Vector2, pixel_size: int, spacing
 		if x0 == x1 and y0 == y1:
 			break
 
-		var e2 := 2 * err
+		var e2: int = 2 * err
 		if e2 >= dy:
 			if x0 == x1: break
 			err += dy
@@ -87,8 +87,8 @@ static func _dda_line(from: Vector2, to: Vector2, pixel_size: int, spacing: int 
 		points.append(Vector2(round(x0) * pixel_size, round(y0) * pixel_size))
 		return points
 
-	var x_inc := dx / steps
-	var y_inc := dy / steps
+	var x_inc: float = dx / steps
+	var y_inc: float = dy / steps
 	var x := x0
 	var y := y0
 

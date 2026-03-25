@@ -100,5 +100,5 @@ func handle_input(event: InputEvent) -> bool:
 
 
 func _get_world_position(event: InputEvent) -> Vector2:
-	var canvas := plugin_root.get_editor_interface().get_editor_viewport()
+	var canvas: Control = plugin_root.get_editor_interface().get_editor_viewport()
 	return canvas.get_canvas_transform().affine_inverse() * event.position
