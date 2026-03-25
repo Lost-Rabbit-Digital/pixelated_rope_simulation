@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://c1y26j8am4mga"]
+[gd_scene load_steps=9 format=3 uid="uid://c1y26j8am4mga"]
 
 [ext_resource type="Script" uid="uid://4kshuq8vtrsw" path="res://addons/pixel_rope/scripts/components/rope_node.gd" id="1_fba2h"]
 [ext_resource type="Script" uid="uid://n6l6bwfnbar6" path="res://addons/pixel_rope/scripts/components/rope_anchor.gd" id="2_bv5le"]
@@ -13,6 +13,13 @@ radius = 8.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sjcm7"]
 size = Vector2(1280, 25)
+
+[sub_resource type="Gradient" id="Gradient_3syrv"]
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_hpp1v"]
+gradient = SubResource("Gradient_3syrv")
+width = 1024
+height = 1024
 
 [node name="MainScene" type="Node2D"]
 
@@ -43,47 +50,68 @@ debug_color = Color(0, 0.698, 0.885, 0.5)
 shape = SubResource("CircleShape2D_sjcm7")
 debug_color = Color(0, 0.698, 0.885, 0.5)
 
-[node name="InteractableObjects" type="Node" parent="."]
+[node name="Interactables" type="Node" parent="."]
 
-[node name="Ground" type="ColorRect" parent="InteractableObjects"]
+[node name="Ground" type="ColorRect" parent="Interactables"]
 offset_top = 695.0
 offset_right = 1280.0
 offset_bottom = 720.0
 color = Color(0.369408, 0.633659, 0.678473, 1)
 
-[node name="StaticBody2D" type="StaticBody2D" parent="InteractableObjects/Ground"]
+[node name="StaticBody2D" type="StaticBody2D" parent="Interactables/Ground"]
 physics_material_override = SubResource("PhysicsMaterial_jndiu")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractableObjects/Ground/StaticBody2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Interactables/Ground/StaticBody2D"]
 position = Vector2(640, 12.5)
 shape = SubResource("RectangleShape2D_sjcm7")
 
-[node name="Box_1" type="ColorRect" parent="InteractableObjects"]
-offset_left = 267.0
-offset_top = 235.0
-offset_right = 1547.0
-offset_bottom = 260.0
-scale = Vector2(0.0946693, 4.93144)
+[node name="Box_1" type="ColorRect" parent="Interactables"]
+offset_left = 1158.0
+offset_top = 355.0
+offset_right = 2438.0
+offset_bottom = 380.0
+scale = Vector2(0.0946693, 13.6914)
 color = Color(0.369408, 0.633659, 0.678473, 1)
 
-[node name="StaticBody2D" type="StaticBody2D" parent="InteractableObjects/Box_1"]
+[node name="StaticBody2D" type="StaticBody2D" parent="Interactables/Box_1"]
 physics_material_override = SubResource("PhysicsMaterial_jndiu")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractableObjects/Box_1/StaticBody2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Interactables/Box_1/StaticBody2D"]
 position = Vector2(640, 12.5)
 shape = SubResource("RectangleShape2D_sjcm7")
 
-[node name="Box_2" type="ColorRect" parent="InteractableObjects"]
-offset_left = 867.0
-offset_top = 106.0
-offset_right = 2147.0
-offset_bottom = 131.0
+[node name="Box_2" type="ColorRect" parent="Interactables"]
+offset_left = 943.0
+offset_top = 200.0
+offset_right = 2223.0
+offset_bottom = 225.0
 scale = Vector2(0.0433861, 2.07337)
 color = Color(0.369408, 0.633659, 0.678473, 1)
 
-[node name="StaticBody2D" type="StaticBody2D" parent="InteractableObjects/Box_2"]
+[node name="StaticBody2D" type="StaticBody2D" parent="Interactables/Box_2"]
 physics_material_override = SubResource("PhysicsMaterial_jndiu")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractableObjects/Box_2/StaticBody2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Interactables/Box_2/StaticBody2D"]
 position = Vector2(640, 12.5)
 shape = SubResource("RectangleShape2D_sjcm7")
+
+[node name="Box_3" type="ColorRect" parent="Interactables"]
+offset_top = 355.0
+offset_right = 1280.0
+offset_bottom = 380.0
+scale = Vector2(0.0946693, 13.6914)
+color = Color(0.369408, 0.633659, 0.678473, 1)
+
+[node name="StaticBody2D" type="StaticBody2D" parent="Interactables/Box_3"]
+physics_material_override = SubResource("PhysicsMaterial_jndiu")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Interactables/Box_3/StaticBody2D"]
+position = Vector2(640, 12.5)
+shape = SubResource("RectangleShape2D_sjcm7")
+
+[node name="Lights" type="Node" parent="."]
+
+[node name="PointLight2D" type="PointLight2D" parent="Lights"]
+position = Vector2(1204, 211)
+shadow_enabled = true
+texture = SubResource("GradientTexture2D_hpp1v")

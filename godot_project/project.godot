@@ -11,9 +11,9 @@ config_version=5
 [application]
 
 config/name="Pixel Ropes"
-config/tags=PackedStringArray("open_sourced", "plugin", "prototype", "utility")
+config/tags=PackedStringArray("active", "open_sourced", "plugin", "utility")
 run/main_scene="uid://3xv28xdk5fcv"
-config/features=PackedStringArray("4.4", "GL Compatibility")
+config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="uid://cd6ksq3ikglbj"
 
 [display]
