@@ -6,7 +6,7 @@ const DISABLED_TOOLTIP := "DISABLED: Enable to spawn rope nodes on click"
 const ENABLED_TOOLTIP := "ENABLED: Currently spawning pixel rope nodes"
 const DISABLED_COLOR := Color(1.0, 0.5, 0.5)
 const ENABLED_COLOR := Color(0.5, 1.0, 0.5)
-const RopeScene = preload("res://addons/pixel_rope/examples/basic_ropes/demo_scene_1.tscn")
+const RopeScene = preload("res://addons/pixel_rope/examples/basic_ropes/basic_rope_demo.tscn")
 
 var rope_button: Button
 var is_rope_creating_mode: bool = false
