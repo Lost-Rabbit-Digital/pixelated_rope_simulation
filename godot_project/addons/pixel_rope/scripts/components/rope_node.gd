@@ -58,6 +58,7 @@ enum GrabMode { NONE, ANCHORS_ONLY, ANY_POINT }
 @export var gravity: Vector2 = Vector2(0, 980)
 @export_range(0.0, 1.0) var damping: float = 0.98
 @export_range(1, 50) var iterations: int = 10
+@export_range(1, 10) var physics_substeps: int = 3
 @export var max_stretch_factor: float = 2.0
 
 # --- Anchors ---
@@ -291,17 +292,20 @@ func _physics_process(delta: float) -> void:
 		queue_redraw()
 		return
 
-	# Pin non-dynamic anchors to their node positions
-	if not dynamic_start_anchor:
-		_points[0] = _start_anchor.global_position
-	if not dynamic_end_anchor:
-		_points[segment_count] = _end_anchor.global_position
+	var sub_delta := delta / float(physics_substeps)
 
-	_verlet_integrate(delta)
-	_solve_constraints()
+	for _substep in physics_substeps:
+		# Pin non-dynamic anchors to their node positions
+		if not dynamic_start_anchor:
+			_points[0] = _start_anchor.global_position
+		if not dynamic_end_anchor:
+			_points[segment_count] = _end_anchor.global_position
 
-	if enable_collisions:
-		_resolve_collisions()
+		_verlet_integrate(sub_delta)
+		_solve_constraints()
+
+		if enable_collisions:
+			_resolve_collisions()
 
 	# Sync dynamic anchor nodes to simulation
 	if dynamic_start_anchor:
