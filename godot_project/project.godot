@@ -22,6 +22,10 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 
+[autoload]
+
+PauseMenu="*res://addons/pixel_rope/scripts/ui/pause_menu.gd"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/pixel_rope/plugin.cfg")
