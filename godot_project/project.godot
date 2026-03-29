@@ -16,15 +16,15 @@ run/main_scene="uid://3xv28xdk5fcv"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="uid://c0qbemtbf1136"
 
+[autoload]
+
+PauseMenu="*res://addons/pixel_rope/scripts/ui/pause_menu.gd"
+
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
-
-[autoload]
-
-PauseMenu="*res://addons/pixel_rope/scripts/ui/pause_menu.gd"
 
 [editor_plugins]
 

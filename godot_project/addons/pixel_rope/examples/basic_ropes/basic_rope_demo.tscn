@@ -19,6 +19,7 @@ size = Vector2(1280, 25)
 [node name="PixelRope" type="Node2D" parent="."]
 position = Vector2(717, 31)
 script = ExtResource("2_sjcm7")
+physics_substeps = 6
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope"]
@@ -46,6 +47,7 @@ debug_color = Color(0, 0.698, 0.885, 0.5)
 [node name="PixelRope2" type="Node2D" parent="."]
 position = Vector2(435, 144)
 script = ExtResource("2_sjcm7")
+physics_substeps = 6
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope2"]
@@ -74,6 +76,7 @@ debug_color = Color(0, 0.698, 0.885, 0.5)
 position = Vector2(990, 74)
 script = ExtResource("2_sjcm7")
 iterations = 15
+physics_substeps = 6
 metadata/_custom_type_script = "uid://4kshuq8vtrsw"
 
 [node name="StartAnchor" type="Node2D" parent="PixelRope3"]
